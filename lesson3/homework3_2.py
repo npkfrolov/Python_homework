@@ -13,6 +13,7 @@ def personal():
     user_place = input("Введите место проживания: ")
     user_email = input("Введите e-mail: ")
     user_phone = input("Введите телефонный номер: ")
+
     return user_name, user_sec_name, user_birth, user_place, user_email, user_phone
 
 name, sec_name, birth, place, email, phone = personal()

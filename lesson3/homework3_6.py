@@ -19,3 +19,4 @@ print(int_func())
 user_string = input("Теперь введите латинскими буквами строку из слов в нижнем регистре, разделенных пробелом: ")
 text = user_string
 print(int_func())
+
