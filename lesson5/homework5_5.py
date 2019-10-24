@@ -3,12 +3,7 @@
 Программа должна подсчитывать сумму чисел в файле и выводить ее на экран.
 """
 
-from random import random
-from itertools import cycle
-from functools import reduce
-
 my_list = [1231, 345, 567, 788]
-#result = []
 
 with open("homework5.txt", "w") as file:
     file.write(" ".join(map(str, my_list)))
