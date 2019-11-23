@@ -8,3 +8,4 @@ from sys import argv
 
 script_name, hours, rate, award = argv
 print(int(hours) * int(rate) + int(award))    # наверняка есть более изящный способ превращения всего в integer
+
