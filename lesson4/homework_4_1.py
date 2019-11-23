@@ -4,8 +4,8 @@
 (выработка в часах*ставка в час) + премия. Для выполнения расчета для конкретных
 значений необходимо запускать скрипт с параметрами."""
 
-#from sys import argv
+from sys import argv
 
-hours, rate, award # = argv    # расчет заработной платы сотрудника
-result = hours * rate + award
-print(result)
+script_name, hours, rate, award = argv
+print(int(hours) * int(rate) + int(award))    # наверняка есть более изящный способ превращения всего в integer
+
