@@ -1,0 +1,1 @@
+SELECT p.name, c.name FROM products p JOIN catalogs c WHERE p.catalog_id =c.id ;
