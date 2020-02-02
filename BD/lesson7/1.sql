@@ -1,2 +1,1 @@
-SELECT name FROM  users WHERE id IN 
-		(SELECT user_id FROM orders);
+SELECT name, user_id FROM users u INNER JOIN orders o WHERE u.id = o.user_id;
