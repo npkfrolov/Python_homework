@@ -3,11 +3,12 @@
  * Используя триггеры, добейтесь того, чтобы одно из этих полей или оба поля были заполнены. 
  * При попытке присвоить полям NULL-значение необходимо отменить операцию.*/
 
-
+DROP trigger IF EXISTS notnull_upd;
+DROP trigger IF EXISTS notnull_ins;
 
 DELIMITER //
 
-CREATE TRIGGER notnull BEFORE INSERT ON products
+CREATE TRIGGER notnull_ins BEFORE INSERT ON products
 FOR EACH ROW
 BEGIN
 	IF (NEW.name IS NULL AND NEW.description IS NULL) THEN 
@@ -15,5 +16,15 @@ BEGIN
 	END IF;
 END//
 
+CREATE TRIGGER notnull_upd BEFORE UPDATE ON products
+FOR EACH ROW
+BEGIN
+	IF ((NEW.name IS NULL AND NEW.description IS NULL)
+	OR  (NEW.name IS NULL AND OLD.description IS NULL) 
+	OR 	(OLD.name IS NULL AND NEW.description IS NULL)) THEN 
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'UPDATE canceled';
+	END IF;
+END//
+
 DELIMITER ;
-INSERT INTO products (name, description) VALUES(NULL, NULL);
+
