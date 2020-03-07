@@ -1,0 +1,539 @@
+CREATE TABLE sophia.desyatiny (
+numb SERIAL PRIMARY KEY,
+name character varying
+);
+COMMENT ON TABLE  sophia.desyatiny IS 'список десятин - крупных территориальных подразделений Новгородской епархии';
+
+INSERT INTO sophia.desyatiny (name) VALUES ('Бежецкая'),
+('Деревская'),
+('Курская'),
+('Русская'),
+('Ржевская'),
+('Шелонская'),
+('Водская'),
+('Залесская и Тесовская'),
+('Ореховская'),
+('Нагорская'),
+('Ладожская и Поволховская'),
+('Коловая'),
+('Заонежская'),
+('Корельская');
+
+CREATE TABLE sophia.devotions (
+fid SERIAL PRIMARY KEY,
+name character varying UNIQUE
+);
+COMMENT ON TABLE  sophia.devotions IS 'список посвящений храмов, нормализован при составлении указателя в книге';
+
+
+-- 756 записей
+CREATE TABLE sophia.corporations (
+fid SERIAL PRIMARY KEY,
+raw_devotions character varying;
+devotion_id integer ARRAY,
+raw_toponame character varying,
+type character varying,
+raw_folio character varying ARRAY,
+source character varying
+);
+COMMENT ON COLUMN sophia.corporations.raw_toponame IS 'часть названия, характеризующая топографию';
+COMMENT ON COLUMN sophia.corporations.raw_folio IS 'лист рукописи - задан в виде массива, потому что не исключен переход названия в тексте с одного листа на другой или с recto на verso или наоборот';
+COMMENT ON COLUMN sophia.corporations.type IS 'церковь или монастырь - и те, и другие играли роль плательщиков, основных акторов источника, поэтому объединены в одну таблицу. Но в указателе монастыри не были нормализованы по тому же шаблону, что и церкви, поэтому пришлось дополнительно нормализовать их с помощью расстояния Левенштейна';
+COMMENT ON COLUMN sophia.corporations.source IS 'название по географическому указателю';
+COMMENT ON TABLE  sophia.corporations IS 'церкви/монастыри из географического указателя. Приставка raw в названии столбцов помечает столбцы, куда вводятся распарсенные данные из макета с помощью функции search_word(). Приставка ctrl - в столбцах, созданных для контроля корректности разбора путем подгрузки названия - одновременно с айдишником сопоставленного объекта';
+
+-- добавление в текст меток на основе regexp для разбора по отдельным полям
+UPDATE sophia.corporations SET source = regexp_replace
+( (SELECT corporations.source), '(?<!,)\s(?=\d)' , ' §'
+);
+
+-- парсинг подстроки от начала строки до метки выхода (1 шаг) с последующим удалением от начала строки до метки вхождения - если таковая имеется(2 шаг). Альтернативный вариант, основанный на поиске длины необходимой подстроки по расстоянию между метками входа и выхода не сработал в связи с тем, что в ряде случаев метка входа отсутсвует
+UPDATE sophia.corporations SET raw_toponame=
+	substring(corporations.source from 1
+			for (SELECT position('§' in corporations.source)
+				)-2);
+UPDATE sophia.corporations SET raw_toponame = regexp_replace
+( (SELECT corporations.raw_toponame), '.+\*' , ''
+);
+
+-- парсинг номеров листов рукописи, на которых упомянуто соответствующее название, с устранением дополнительных сведений в скобках
+UPDATE sophia.corporations SET source=
+regexp_replace(corporations.source, '\s\(.+\),', ',');
+UPDATE sophia.corporations SET source=
+regexp_replace(corporations.source, '\s\(.+\)$', '');
+UPDATE sophia.corporations SET raw_folio=
+	regexp_split_to_array(substring(corporations.source from
+			  (SELECT position('§' in corporations.source)+1
+				)), ',');
+
+-- 758 записей
+CREATE TABLE sophia.altars (
+fid SERIAL PRIMARY KEY,
+raw_holyname character varying,
+ctrl_holyname character varying,
+raw_toponame character varying,
+ctrl_toponame character varying,
+devotion_id integer,
+corporation_id integer,
+source character varying
+);
+COMMENT ON COLUMN sophia.altars.raw_holyname IS 'посвящение храма из указателя';
+COMMENT ON TABLE  sophia.altars IS 'поскольку один храм мог иметь более одного престола, пришлось создать отдельную таблицу для престолов';
+
+-- парсинг подстроки от начала строки до метки выхода (1 шаг) с последующим удалением метки вхождения - если таковая имеется(2 шаг).
+UPDATE sophia.altars SET raw_holyname=
+	substring(altars.source from 1
+		for (SELECT position('*' in altars.source)
+		));
+UPDATE sophia.altars SET raw_holyname = regexp_replace
+( (SELECT altars.raw_holyname), '\*' , ''
+);
+
+-- образец функции, которая идентифицирует названия из текста с индексом через функцию "расстояние Левенштейна"
+CREATE OR REPLACE FUNCTION sophia.search_word(
+	sourcecolm character varying)
+    RETURNS character varying
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE
+AS $BODY$      DECLARE
+	   i text;
+	   x int := 10;
+	   levens int;
+	   spell varchar;
+   BEGIN
+	   FOR i IN SELECT word FROM sophia.months ORDER BY fid LOOP
+	   SELECT sophia.levenshtein(i, $1) INTO levens;
+	   IF (levens < x) THEN x := levens;
+	   spell := i;
+	   END IF;
+	   END LOOP;
+       RETURN spell;
+   END;
+$BODY$;
+
+ALTER FUNCTION sophia.search_word(character varying)
+    OWNER TO npkfrolov;
+
+COMMENT ON FUNCTION sophia.search_word(character varying)
+    IS 'функция сравнивает выбранное из текста исторического источника по шаблону значение поля и сравнивает его с набором значений соответствующего справочника. Функция применяется в составе  запроса типа:
+ UPDATE sophia.mytable
+SET ctrl_column = sophia.search_word(mytable.raw_text) WHERE char_length(mytable.raw_text) > 0;';
+
+-- после проверки результатов работы функции подтягиваем айдишники в поле внешнего ключа.
+-- Сложное предложение WHERE связано с тем, что часть записей в corporations имеет только toponame, а часть только devotions
+UPDATE sophia.altars a SET corporation_id =
+	(SELECT c.fid FROM sophia.corporations c
+		WHERE c.raw_toponame=a.ctrl_toponame
+					AND c.ctrl_devotions = a.ctrl_holyname
+);
+-- необходимость ввести лимит в 1 запись связана с тем, что в таблице corporations в нескольких случаях представлено две записи, относящихся к одному по сути храму - в указателе церквей и в указателе храмов. Посвящение у них одно и то же. Другим возможным вариантом является агрегация по типу "церковь"/"монастырь"
+UPDATE sophia.corporations c SET devotion_id =
+(SELECT ARRAY [
+	(SELECT devotion_id FROM sophia.altars a
+		WHERE a.corporation_id=c.fid LIMIT 1
+	)]);
+
+
+
+CREATE TABLE sophia.statuses (
+fid SERIAL PRIMARY KEY,
+status character varying UNIQUE
+);
+COMMENT ON TABLE  sophia.statuses IS 'справочник статусов персон';
+
+CREATE TABLE sophia.payments_cat (
+fid SERIAL PRIMARY KEY,
+class character varying UNIQUE
+);
+COMMENT ON TABLE  sophia.payments_cat IS 'виды дохода в казну по книге';
+
+
+-- 96 примечаний
+CREATE TABLE sophia.footnotes (
+fid SERIAL PRIMARY KEY,
+note character varying
+);
+COMMENT ON TABLE sophia.footnotes IS 'таблица с археографическими примечаниями к тексту рукописи';
+
+-- часть рукописи с записями подъезжей пошлины, 558 записей
+CREATE TABLE sophia.pod_ezd (
+fid SERIAL PRIMARY KEY,
+raw_payer_church character varying,
+ctrl_standardname character varying,
+desyatina_id integer,
+payer_church_id character varying ARRAY,
+raw_payer_name character varying,
+ctrl_payer_name character varying,
+payer_name_id integer ARRAY,
+payment_descr character varying,
+footnote_id integer ARRAY,
+raw_folio character varying ARRAY,
+source character varying
+);
+COMMENT ON COLUMN sophia.pod_ezd.payer_church_id IS 'этот номер берется из уже установленной в макете метки';
+COMMENT ON TABLE  sophia.pod_ezd IS 'книга подъезжей пошлины (платежница)';
+
+CREATE OR REPLACE FUNCTION sophia.update_regexp(columname character varying, expression character varying)
+  RETURNS character varying AS
+$$
+SELECT
+substring($1 from $2
+) as result;
+$$
+language sql
+COMMENT ON FUNCTION sophia.update_regexp(character varying, character varying) IS 'функция для парсинга из указанного поля по указанной маске в стиле POSIX';
+
+(?<! |\d|пол-|<<|,|\(|—|\[)(\d{1,2}) - выборка археографических примечаний в тексте footnote_id
+(?<=\[)(\d*)(?=\]) - выборка ссылок на номер церкви по комментарию к десятине all_novg_alt
+(^.+?)(?= у ) - выборка организаций-плательщиков raw_payer_church
+( у .+?)(?=взяти|не имати) - выборка данных о попах, у кого полагается взять raw_payer_name
+(взяти.+?)(?=взято?| платил| денги платил|$) - выборка данных о том, сколько надлежит взять payment_descr
+UPDATE sophia.pod_ezd SET payer_church_id[1]=sophia.update.regexp(source, '(\[\d*\])') WHERE position('(\[\d*\])' in pod_ezd.payer_church_id)>0;
+
+
+CREATE TABLE sophia.payments_pod_ezd (
+fid SERIAL PRIMARY KEY,
+payment_id integer,
+class_of_payment character varying,
+raw_platil_name character varying,
+ctrl_platil_name character varying,
+platil_id integer,
+raw_platil_status character varying,
+platil_status_id integer,
+raw_month character varying,
+month_id integer,
+raw_day integer,
+date_calc date,
+account integer,
+rouble float,
+grivna float,
+altyn float,
+denga float,
+total float,
+source character varying
+);
+COMMENT ON COLUMN sophia.payments_pod_ezd.payment_id IS 'айдишник из таблицы pod_ezd';
+COMMENT ON COLUMN sophia.payments_pod_ezd.account IS 'новгородское число - 1, московское - 2';
+COMMENT ON TABLE  sophia.payments_pod_ezd IS 'платежи';
+
+(взято.+| платил.+| денги платил.+) - выборка данных о том, кто сколько и когда заплатил raw_platil_name
+(?<=в )(\d{1,2})(?= день) - выборка даты внесения платежа raw_date
+((генв.+)|(дек.+)|(февр.+)|(марта)|(апре.+)|(маия)|(июн.)|(июл.)|(авгу.+)|(септ.+)|(октя.+)|(ноя.+))(?= в \d{1,2}) - выборка месяца внесения платежа. К сожалению, не нашел ничего лучше, чем просто перечислить названия месяцев raw_month
+
+-- подставляем айдишники месяцев
+UPDATE sophia.payments_pod_ezd
+SET month_id = (SELECT fid FROM sophia.months
+WHERE months.word = sophia.search_word(raw_month));
+
+CREATE FUNCTION sophia.calendar(colum_month integer, colum_day integer) RETURNS date AS $$
+			  DECLARE
+			   year int;
+			   date_calc date;
+			   BEGIN
+IF (9<=$1) THEN year=7085-5509;
+	ELSE year=7085-5508;
+END IF;
+		SELECT CAST(concat(year,'-',$1,'-',$2) AS date)
+		   INTO date_calc;
+			   RETURN date_calc;
+			END;
+		$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION sophia.calendar(integer, integer) IS 'функция получает в качестве аргументов данные о месяце и дне 7085 года от сотворения мира (сентябрьский стиль даты, "византийская" эра), когда выполнен платеж, и пересчитывает его в год от Р.Х.';
+
+--определение даты платежа
+UPDATE sophia.payments_pod_ezd
+SET date_calc = sophia.calendar(
+month_id, raw_day) WHERE month_id>0;
+
+
+-- 875 записей
+CREATE TABLE sophia.all_novg_alt (
+fid SERIAL PRIMARY KEY,
+raw_toponumber character varying,
+raw_devotion character varying,
+raw_topocomments character varying,
+desyatina_id integer,
+desyatina character varying,
+raw_folio character varying ARRAY,
+devotion_id integer,
+localized_after character varying,
+corporation_id integer,
+page integer ARRAY,
+source character varying
+);
+COMMENT ON COLUMN sophia.all_novg_alt.corporation_id IS 'этот айдишник устанавливается только при сопоставлении комбинации полей raw_folio и devotion_id в этой таблице с комбинацией полей raw_folio и devotion_id из таблицы corporations';
+COMMENT ON COLUMN sophia.all_novg_alt.raw_folio IS 'здесь приведены ссылки на листы ркп., позволяющие сопоставлять объекты этого комментария с объектами corporations';
+COMMENT ON COLUMN sophia.all_novg_alt.raw_toponumber IS 'номер, указанный в историко-географическом комментарии в монографии, иногда имеет литеру, поэтому varchar. Тот же номер на карте и в квадратных скобках в тексте источника';
+COMMENT ON COLUMN sophia.all_novg_alt.raw_topocomments IS 'комментарий о локализации церкви в историко-географическом комментарии в монографии образуют массив, соответствующий массиву ссылок в поле refs';
+COMMENT ON TABLE  sophia.all_novg_alt IS 'по возможности полный перечень престолов церквей/монастырей из списка по десятинам с описанием локализации';
+
+-- вытаскиваем из первого абзаца указание на десятину:
+UPDATE sophia.all_novg_alt SET desyatina=
+substring(all_novg_alt.source from (SELECT position('@' in all_novg_alt.source))
+		for (SELECT position('@@' in all_novg_alt.source)
+			));
+
+-- вытаскиваем номер десятины из таблицы десятин:
+UPDATE sophia.all_novg_alt SET desyatina_id =
+	(SELECT numb FROM sophia.desyatiny WHERE desyatiny.name =
+		sophia.search_word(desyatina)
+		)
+WHERE length(all_novg_alt.desyatina) >1;
+
+--удаляем из поля source метку десятины
+UPDATE sophia.all_novg_alt SET source = regexp_replace
+( (SELECT all_novg_alt.source), '@.+@@' , ''
+);
+
+--вытаскиваем указание номера страницы текста пользуясь тем, что все страницы здесь из трех цифр
+UPDATE sophia.all_novg_alt SET page=
+(SELECT ARRAY [CAST(substring(all_novg_alt.source from (SELECT position('<<' in all_novg_alt.source)+2)
+	for 3) AS integer)]) WHERE position('<<' in all_novg_alt.source)>0;
+
+--если после маркера страниц в абзаце остался текст, значит, в массив page нужно добавить номер следующей страницы
+UPDATE sophia.all_novg_alt
+	SET page [2] = page [1]+1
+		WHERE length
+		(substring(all_novg_alt.source
+				   from '>>.+'))>2;
+
+--заменяем в поле source метку страницы с ее номером на обозначение границы страниц (для цитирования). Когда номер страницы совпадает с концом абзаца, номер страницы из строки просто удаляем
+UPDATE sophia.all_novg_alt SET source = regexp_replace
+	( (SELECT all_novg_alt.source), '<<\d+>>' , '||'
+	) WHERE length
+			(substring(all_novg_alt.source
+			 	from '>>.+'))>2;
+
+-- вытаскиваем по метке # номер комментария из поля source
+UPDATE sophia.all_novg_alt
+SET raw_toponumber = substring(all_novg_alt.source from
+'(.+)(?=.#)');
+
+-- вытаскиваем из поля source посвящения храмов в две итерации (исходный текст не структурирован строго, поэтому регулярное выражение пришлось модифицировать)
+UPDATE sophia.all_novg_alt
+SET raw_devotion = substring(all_novg_alt.source from
+'(?=Монастырь )(.+)(?=\*)')
+WHERE raw_devotion IS NULL;
+
+--вытаскиваем айдишник посвещения. Результат нуждается в доработке - сравниваемый текст недостаточно структурирован и унифицирован, есть ошибки идентификации, которые нужно устранять вручную
+UPDATE sophia.all_novg_alt SET devotion_id=
+(SELECT fid FROM sophia.devotions
+ 	WHERE devotions.name =
+		sophia.search_word(raw_devotion)
+		)
+WHERE length(all_novg_alt.raw_devotion) >1;
+
+-- вытаскиваем из поля source сведения о локализации храмов после метки §
+UPDATE sophia.all_novg_alt
+SET localized_after = substring(all_novg_alt.source from
+'(?<=§ ).+');
+
+
+--вытаскиваем ссылки на номера листов рукописи в текстовый массив raw_folio (в тексте комментария, представленного таблицей all_novg_alt, ссылки приводятся на два раздела рукописи - книгу подъезжей пошлины и книгу венечной пошлины, они вынуты по отдельности. Выражения POSIX при парсинге в массив не могут быть подставлены сразу с оператором |, поэтому парсинг в каждый из двух элементов массива осуществлялся в несколько итераций. Чтобы новая итерация не затирала поля, куда уже записаны данные, она применялась только к массиву, где есть нулевое значение. Для фильтрации записей в поле с типом данных массив написана функция
+CREATE OR REPLACE FUNCTION sophia.NULL_EXISTS(val anyelement)
+  RETURNS boolean AS
+$$
+SELECT EXISTS (
+SELECT 1 from unnest(val) arr(el) WHERE el IS NULL
+);
+$$
+language sql
+
+--сам парсинг (примененные выражения regexp приведены сразу все, избыточность их связана с тем, что (видимо, в связи с какими-то спецсимволами издательского макета) не все подстроки отыскивались по одному выражению)
+UPDATE sophia.all_novg_alt
+SET raw_folio[1]=
+(substring(all_novg_alt.source from
+'(?<=\[подъез., л. )(\d{1,3} об.)
+|(?<=\[подъез., л. )(\d{1,3})
+|(\d{1,3})(?=; венеч)
+|(?<=\[подъезж., л. )(\d{1,3} об.)
+|(?<=\[подъезж., л. )(\d{1,3})
+'))
+WHERE sophia.NULL_EXISTS(raw_folio) IS TRUE;
+
+UPDATE sophia.all_novg_alt
+SET raw_folio[2]=
+(substring(all_novg_alt.source from
+'(?<=венеч., л. )(\d{1,3} об.)|(?<=венеч., л. )(\d{1,3})'))
+WHERE sophia.NULL_EXISTS(raw_folio) IS TRUE;
+
+
+-- после заполнения полей, по которым таблица связана с другими, устанавливаем соответствующие внешние ключи
+ALTER TABLE sophia.altars ADD FOREIGN KEY (devotion_id) REFERENCES sophia.devotions ON DELETE RESTRICT;
+ALTER TABLE sophia.altars ADD FOREIGN KEY (corporation_id) REFERENCES sophia.corporations ON DELETE RESTRICT;
+ALTER TABLE sophia.pod_ezd ADD FOREIGN KEY (corporation_id) REFERENCES sophia.corporations ON DELETE RESTRICT;
+ALTER TABLE sophia.pod_ezd ADD FOREIGN KEY (desyatina_id) REFERENCES sophia.desyatiny ON DELETE RESTRICT;
+ALTER TABLE sophia.pod_ezd ADD FOREIGN KEY (payer_church_id) REFERENCES sophia.all_novg_alt(raw_toponumber) ON DELETE RESTRICT;
+ALTER TABLE sophia.payments_pod_ezd ADD FOREIGN KEY  (class_of_payment) REFERENCES payments_cat(class) ON DELETE RESTRICT;
+ALTER TABLE sophia.payments_pod_ezd ADD FOREIGN KEY (platil_status_id) REFERENCES sophia.statuses ON DELETE RESTRICT;
+ALTER TABLE sophia.all_novg_alt ADD FOREIGN KEY (desyatina_id) REFERENCES sophia.desyatiny ON DELETE RESTRICT;
+ALTER TABLE sophia.all_novg_alt ADD FOREIGN KEY (corporation_id) REFERENCES sophia.corporations ON DELETE RESTRICT;
+
+-- таблица комментов, оставляемых зарегистрированными пользователями в историко-географическом описании храмов. Коммент вносится через триггер при редактировании соответствующего поля вьюшки all_novg_alt_view
+CREATE TABLE sophia.user_comment (
+	fid SERIAL PRIMARY KEY,
+	username character varying DEFAULT "current_user"(),
+	usercomment character varying,
+	date_of_comment timestamp DEFAULT CAST (('now'::text) AS timestamp (0) with
+	time zone)
+);
+
+-- создание роли пользователя
+CREATE ROLE logged_user WITH
+  LOGIN
+  NOSUPERUSER
+  INHERIT
+  NOCREATEDB
+  NOCREATEROLE
+  NOREPLICATION
+  VALID UNTIL 'infinity';
+
+GRANT USAGE ON schema sophia TO logged_user;
+GRANT SELECT ON TABLE sophia.user_comment TO logged_user;
+GRANT INSERT ON TABLE sophia.user_comment TO logged_user;
+GRANT UPDATE ON sophia.user_comment_fid_seq TO logged_user;
+GRANT UPDATE(usercomment) ON sophia.user_comment TO logged_user;
+
+CREATE VIEW sophia.all_novg_alt_view AS SELECT DISTINCT
+d.name AS desyatina,
+a.raw_toponumber AS number,
+a.raw_topocomments AS comment,
+a.localized_after,
+a.page,
+a.raw_folio AS folio
+FROM sophia.all_novg_alt a
+LEFT JOIN sophia.desyatiny d
+ON a.desyatina_id=d.numb
+ORDER BY comment;
+
+CREATE VIEW sophia.corporations_view AS SELECT
+fid,
+raw_devotions AS devotions,
+raw_toponame AS toponame,
+type,
+raw_folio AS folio
+FROM sophia.corporations
+ORDER BY fid;
+
+
+--приходная книга разных сборов
+CREATE TABLE sophia.miscellaneus (
+fid SERIAL PRIMARY KEY,
+desyatina character varying,
+desyatina_id integer,
+raw_payer_geography character varying,
+ctrl_payer_geography character varying,
+payer_geography_id integer,
+raw_folio character varying ARRAY,
+source character varying
+);
+COMMENT ON TABLE  sophia.miscellaneus IS 'это раздел рукописи о сборах разного происхождения;
+
+CREATE TABLE sophia.payments_miscel (
+fid SERIAL PRIMARY KEY,
+payment_id integer,
+class_of_payment character varying,
+raw_platil_name character varying,
+ctrl_platil_name character varying,
+platil_id integer,
+raw_platil_status character varying,
+platil_status_id integer,
+raw_month character varying,
+month_id integer,
+raw_day integer,
+date_calc date,
+account integer,
+rouble float,
+grivna float,
+altyn float,
+denga float,
+total float,
+source character varying
+);
+COMMENT ON COLUMN sophia.payments_miscel.payment_id IS 'айдишник из таблицы miscellaneus';
+COMMENT ON COLUMN sophia.payments_miscel.account IS 'новгородское число - 1, московское - 2';
+COMMENT ON TABLE  sophia.payments_miscel IS 'платежи';
+
+
+--вьюшка объединяет данные о платежах из разных разделов рукописи
+CREATE VIEW sophia.payments_view AS SELECT DISTINCT
+row_number() OVER () AS row_number,
+pay.payer_church_id AS church,
+pay.class_of_payment,
+pay.ctrl_platil_name AS name,
+pay.platil_status_id AS status,
+pay.date_calc AS date,
+pay.account,
+pay.total
+FROM (SELECT pd.payer_church_id,
+    p.class_of_payment,
+    p.ctrl_platil_name,
+    p.platil_status_id,
+    p.date_calc,
+    p.account,
+    p.total
+	FROM sophia.payments_pod_ezd p
+	LEFT JOIN sophia.pod_ezd pd
+	ON p.payment_id=pd.fid
+		UNION ALL
+SELECT pd.payer_church_id,
+    m.class_of_payment,
+    m.ctrl_platil_name,
+    m.platil_status_id,
+    m.date_calc,
+    m.account,
+    m.total
+FROM sophia.payments_miscel m
+LEFT JOIN sophia.pod_ezd pd
+ON m.payment_id=pd.fid) pay
+ORDER BY date;
+
+CREATE VIEW sophia.pod_ezd_view AS SELECT DISTINCT
+ 	p.fid,
+ 	d.name,
+	p.payer_church_id AS church_numb_map,
+	p.ctrl_standardname AS who_should_pay_org,
+	pay.date_calc AS when_payed,
+	pay.total AS sum_of_payed,
+    p.raw_folio AS folio,
+    a.raw_topocomments
+FROM sophia.pod_ezd p
+LEFT JOIN sophia.desyatiny d
+ON p.desyatina_id=d.numb
+RIGHT JOIN sophia.all_novg_alt a
+ON a.raw_toponumber = ANY (p.payer_church_id)
+LEFT JOIN sophia.payments_pod_ezd pay
+ON p.fid=pay.payment_id;
+COMMENT ON VIEW sophia.pod_ezd_view IS 'надлежащим образом вьюшка пока что не работает - из-за того, что не заполнено поле pod_ezd.desyatina_id и, соответственно, предложение DISTINCT не удаляет дубликаты'
+
+CREATE TABLE sophia.quires (
+numb integer PRIMARY KEY,
+roman_numb character varying,
+row character varying ARRAY,
+raw_hight integer,
+raw_width integer,
+ctrl_size_of_leaf character varying,
+comment character varying
+);
+COMMENT ON COLUMN sophia.quires.roman_numb IS 'сюда записывается приведенное к виду римского числа значение из поля number';
+COMMENT ON COLUMN sophia.quires.row IS 'диапазон листов, включенных в тетрадь';
+COMMENT ON TABLE  sophia.quires IS 'тетради рукописи';
+
+CREATE TABLE sophia.watermark_type (
+fid SERIAL PRIMARY KEY,
+type character varying,
+reference character varying UNIQUE
+);
+COMMENT ON TABLE  sophia.watermark_type IS 'типы филиграней';
+
+CREATE TABLE sophia.pairs (
+fid SERIAL PRIMARY KEY,
+first_leaf character varying,
+second_leaf character varying,
+watermark_id integer REFERENCES sophia.watermark_type ON DELETE RESTRICT
+);
+COMMENT ON TABLE  sophia.pairs IS 'пары листов - деление листов в тетрадях по парам играет большую роль в кодикологическом исследовании рукописей, поскольку позволяет судить о способе попадания листов в тетрадь';
+
+
