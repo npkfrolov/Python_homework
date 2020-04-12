@@ -9,8 +9,8 @@ while n != 0:
     temp = 0
     for i in str(n):
         temp += int(i)
-        if temp > summ:
-            summ = temp
-            m = n
+    if temp > summ:
+        summ = temp
+        m = n
     n = int((input('Введите новое натуральное число (при вводе нуля программа будет завершена): ')))
 print(f'Из введенных чисел наибольшую сумму цифр имеет {m}, эта сумма равна {summ}')
