@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Python_homework.iml" filepath="$PROJECT_DIR$/.idea/Python_homework.iml" />
+      <module fileurl="file://$USER_HOME$/PycharmProjects/django/.idea/django.iml" filepath="$USER_HOME$/PycharmProjects/django/.idea/django.iml" />
+      <module fileurl="file://$USER_HOME$/Рабочий стол/sophiadjango/.idea/sophiadjango.iml" filepath="$USER_HOME$/Рабочий стол/sophiadjango/.idea/sophiadjango.iml" />
     </modules>
   </component>
 </project>
