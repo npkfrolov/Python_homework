@@ -1,9 +1,4 @@
-#  1) Для каждой пары городов двумерная матрица. По осям: варианты длины а) большой полуоси эллипсоида; б) малой полуоси
-#  эллипсоида/ Каждый вариант должен быть зарегистрирован в spatial_ref_sys БД постгис как отдельная SRID. На нее нужно
-#  будет потом ссылаться в запросе при определении расстояний между двумя точками, определяемыми по координатам;
-#  2) В ячейках записи - значение расстояний на эллипсоиде между парой точек;
-#  3) (?) Сортировка по близости к реальным значениям расстояний;
-#  4) Наложение полученных нечетких множеств, характеризующих все пары городов и анализ результата.
+# переделал файл arabs_geoids.py для получения картинки с реальными координатами и расчета множеств сфероидов для них
 
 import numpy as np
 from numpy import ix_, array, arange, argwhere, array_split, set_printoptions, unique, intersect1d
@@ -36,10 +31,10 @@ set_printoptions(edgeitems=100, precision=9)  # параметры вывода 
 conn = psycopg2.connect(f"dbname='Base' user='npkfrolov' password='123308' host='127.0.0.1' port='5432'")
 print("Database opened successfully")
 cur = conn.cursor()
-cur.execute('SELECT * FROM arabs.abu_meditterenian_calc_saidsaid WHERE p1_fid < p2_fid')
+cur.execute('SELECT * FROM arabs.abu_meditterenian_calc WHERE p1_fid < p2_fid')
 dbrecords_calc = cur.fetchall()
 # print(dbrecords_calc)
-scope = 0.1397  # от этого параметра зависит, какие пары городов будут участвовать в результате в поисках общих параметров
+scope = 0.1271  # от этого параметра зависит, какие пары городов будут участвовать в результате в поисках общих параметров
 # эллипсоида. Анализ распределения минимальных значений расхождения расстояний с реальными (на основе естественных
 # интервалов Дженкса) не очень точно характеризует релевантность данных, поскольку не учитывает ту долю, которую
 # составляет расхождение от реального расстояния между городами. Поэтому вместо этого на интервалы Дженкинса разбивался
@@ -51,23 +46,13 @@ options = {}  # сюда собираем результаты для дальн
 for row in dbrecords_calc:  # по строкам БД, в строке одна пара городов
     first_point = row[1]
     second_point = row[2]
-    first_fid = row[8]
-    # first_fid = row[12]
-    second_fid = row[9]
-    # second_fid = row[13]
+    first_fid = row[12]
+    second_fid = row[13]
     pairs = first_point + ' - ' + second_point
-    long_pl_deg1 = row[13]+row[14]/60 # переводим угловые градусы в десятичные,с которыми работает постгис
-    # long_pl_deg1 = row[18]+row[19]/60 # переводим угловые градусы в десятичные,с которыми работает постгис
-    lat_pl_deg1 = row[15]+row[16]/60
-    # lat_pl_deg1 = row[20]+row[21]/60
-    long_pl_deg2 = row[17]+row[18]/60
-    # long_pl_deg2 = row[22]+row[23]/60
-    lat_pl_deg2 = row[19]+row[20]/60
-    # lat_pl_deg2 = row[24]+row[25]/60
-    point1 = f'POINT({long_pl_deg1} {lat_pl_deg1})'
-    point2 = f'POINT({long_pl_deg2} {lat_pl_deg2})'
+    point1 = row[16]
+    point2 = row[17]
     distance = row[6]
-    # print(point1, point2)
+    # print(distance)
     matrix = []  # сюда отправляем все списки с результатами измерений расстояний по всем вариантам большой полуоси
 
     for ind, el in enumerate(template):
@@ -78,7 +63,7 @@ for row in dbrecords_calc:  # по строкам БД, в строке одна
 
         for fl in el:  # перебираем варианты коэффициента полярного сжатия внутри одного варианта длины большой полуоси
             # print(f'{ind}) {pairs}: {fl}')
-            cur.execute('''SELECT ST_distance_spheroid(ST_GeomFromText(%s), ST_GeomFromText(%s), 'SPHEROID["USER",%s,%s]')''', (point1, point2, semi_major_axis, fl))
+            cur.execute('''SELECT ST_distance_spheroid(%s, %s, 'SPHEROID["USER",%s,%s]')''', (point1, point2, semi_major_axis, fl))
             dbrecords_points = cur.fetchall()
             row_x.extend(*dbrecords_points)  # отправляем результаты измерений в список, общий для одного варианта
             # длины большой полуоси
@@ -100,7 +85,7 @@ for row in dbrecords_calc:  # по строкам БД, в строке одна
     # conn.commit()  # этот блок для заполнения БД значениями минимальных расхождений
 
 
-    print(f'{pairs}: {abs(diff_share).min()}')
+    # print(f'{pairs}: {abs(diff_share).min()}')
     filtered = argwhere(abs(diff_share) < scope)  # отбираем индексы только тех ячеек, в которых значения меньше выбранного
     # порога. Поленился переделывать код, но в нынешнем виде код требует редактирования для выполнения всего
     # алгоритма. Селект из таблицы calc должен забирать данные о минимальной доле расхождений, но это поле
@@ -110,7 +95,7 @@ for row in dbrecords_calc:  # по строкам БД, в строке одна
 
     for j in filtered:  # перебираем все отобранные варианты индексов и по ним находим значения длин полуосей
         filt_x, filt_y = int(axis_a_range[j[0]]), int(axis_b_range[j[1]])
-        SQL = "INSERT INTO arabs.coords_python_saidsaid (first_city, second_city, major_semi_axis, minor_semi_axis, scope) VALUES (%s, %s, %s, %s, %s);"
+        SQL = "INSERT INTO arabs.true_coords_python (first_city, second_city, major_semi_axis, minor_semi_axis, scope) VALUES (%s, %s, %s, %s, %s);"
         data = (first_fid, second_fid, filt_x, filt_y, scope)
         # print(type(first_fid), type(second_fid), type(filt_x), type(filt_y), type(scope))
         cur.execute(SQL, data)  # такое решение помогает избежать SQL-инъекций
@@ -118,20 +103,20 @@ for row in dbrecords_calc:  # по строкам БД, в строке одна
     print(f'Данные о параметрах городов {pairs} отправлены в БД')
 
 
-                    # match = (int(filt_x), int(filt_y))  # собираем кортеж из пары значений длин полуосей
-                    # matchlist.append(match)
-                    # print(f'{pairs}: {len(matchlist)}')
-                # mydict = {pairs: matchlist}  # делаем словарь, где ключом указываем пару городов, значением все кортежи
-                # print(mydict)
-                # if len(matchlist):  # в общий словарь отправляем только те ключи, которые содержат  какие-то кортежи
-                #     options.update(mydict)
+        # match = (int(filt_x), int(filt_y))  # собираем кортеж из пары значений длин полуосей
+        # matchlist.append(match)
+        # print(f'{pairs}: {len(matchlist)}')
+    # mydict = {pairs: matchlist}  # делаем словарь, где ключом указываем пару городов, значением все кортежи
+    # print(mydict)
+    # if len(matchlist):  # в общий словарь отправляем только те ключи, которые содержат  какие-то кортежи
+    #     options.update(mydict)
 
-                    # print(mystr)
+        # print(mystr)
 
-                # print(len(list(options.values())[0]))
-                # print(f'{pairs}: {arr[0, 1]} / {result[0, 1]}')
-                # print(array(matrix, dtype=float))
-                # print(f'{pairs} done')
+    # print(len(list(options.values())[0]))
+    # print(f'{pairs}: {arr[0, 1]} / {result[0, 1]}')
+    # print(array(matrix, dtype=float))
+    # print(f'{pairs} done')
 
-                # with open(f'/home/alexey/Документы/Google_disk/Тексты/АбулФида_2021/array.json', 'w') as file:
-                #     json.dump(options, file)   # выгружаем результат в джейсон
+    # with open(f'/home/alexey/Документы/Google_disk/Тексты/АбулФида_2021/array.json', 'w') as file:
+    #     json.dump(options, file)   # выгружаем результат в джейсон
