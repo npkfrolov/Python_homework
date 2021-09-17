@@ -1,14 +1,42 @@
-import multiprocessing
-# from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Pool, Process
 import time
 import json
 from itertools import combinations
+import csv
 from multiprocessing.pool import ThreadPool
 
 import psycopg2
 from contextlib import closing
 import concurrent.futures
+
+# def inters(myset,  digit):  # функция принимает набор множеств и их количество, находит все пересечения
+#         mystr = 'list(set.intersection('  # поскольку число множеств меняется, формируем строку, которую затем исполняем
+#         # как код
+#         for inx, el in enumerate(myset):
+#                 if inx != 0:
+#                         mystr += ', '
+#                 mystr += f'set(myset[{inx}])'
+#                 if inx == digit-1:
+#                         mystr += '))'
+#         res = eval(mystr)  # запуск строки как кода
+#         return res
+
+# with open(f'/home/alexey/Документы/Google_disk/Тексты/АбулФида_2021/array.json', 'r') as file:
+
+
+#
+#         if len(inter) > 0:  # печатаем, если нашелся хотя бы один кортеж, общий для всех множеств
+#                 z += 1  # увеличиваем счетчик, чтобы остановить цикл,  когда ни одна комбинация множеств их
+#                 # заданного числа не даст хотя бы одного пересечения
+#                 report = f'{mykeys_comb[ind]}; большая ось больше; {len([m for m in inter if m[0]>m[1]])}:малая ось больше:{len([m for m in inter if m[0] < m[1]])}:оси равны:{len([m for m in inter if m[0] == m[1]])}:всего:{len(inter)}'
+#                 csvwriter.writerow([digit, mykeys_comb[ind], len(inter), len([m for m in inter if m[0] > m[1]]), len([m for m in inter if m[0] < m[1]])])
+#                 print(report)
+#     if z == 0:
+#         print(f'Дальнейший перебор вариантов не имеет смысла, '
+#               f'ни одна из комбинаций {digit} множеств не дала пересечений')
+#         # break
+#
 
 mylist = [2, 3, 14, 15, 17, 18, 20, 22, 23, 24, 27, 30, 32, 33, 34, 35, 36, 42, 45]  # это список айдишников городов,
 # который можно  сделать в виде запроса к БД, но быстрее захардкодить
@@ -16,24 +44,10 @@ my_result = []
 mylength = len(mylist)
 # print(f'mylength: {mylength}')
 coeff_all_digits = {}
-digit = 2
-cpu = int(multiprocessing.cpu_count()/2)
-# print(cpu)
-start_time = time.time()
-# if __name__ == '__main__':
-rest_count = mylength - digit
-# print(f'rest_count: {rest_count}')
-combi_count = ((rest_count) ** 2 - rest_count) / 2  # вычисляем количество уникальных  комбинаций городов после исключения
-# того числа, которое  берется на этой итерации
-#     print(f'combi_count: {combi_count}')
-combins = tuple(combinations(mylist, digit))  # собираем все соответствующие комбинации наборов кортежей
-print(f'combins: {len(combins)}')
-# z = 0
-coef_for_digit = []
 
 def sql(combi):
     # for combi in combin:
-    with closing(psycopg2.connect(f"dbname='Base' user='npkfrolov' password='123308' host='127.0.0.1' port='5432'")) \
+    with closing(psycopg2.connect(f"dbname='base' user='npkfrolov' password='123308' host='127.0.0.1' port='5432'")) \
             as conn:
         # print("Database opened successfully")
         cur = conn.cursor()
@@ -86,11 +100,14 @@ def sql(combi):
               ORDER BY aggr_pairs_all_said.cities_names) 
           AS aggr_sph;'''
         # combi = [2, 3]
-        list_combi = list(combi)
-        data = (list_combi, list_combi)
+        data = (list(combi), list(combi))
         print(data)
+        # print(SQL)
+        # print(f'data: {data}')
         cur.execute(SQL, data)  # такое решение помогает избежать SQL-инъекций
         # conn.commit()
+        # SQL2 = '''SELECT max(count_comb) FROM arabs.aggr_spheres_all_said;'''
+        # cur.execute(SQL2)
         result = cur.fetchone()
 
         # print(f'result: {result}')
@@ -104,61 +121,97 @@ def sql(combi):
         # print(coef_for_digit)
         coeff_all_digits.update(digit_dict)
 
-class Thread:
-    tread_count = 0
-    def __init__(self, combins):
-        self.myset = combins[Thread.tread_count::cpu]
-        Thread.tread_count += 1
 
-if __name__ == '__main__':
-    comb_list = []
-    for el in range(cpu):
-        obj = Thread(combins)  # чтобы не хардкодить  каждый раз потоки по числу ядер процессора, создаются объекты
-        # потока в соответствующем количестве
-        # print(obj)
-        comb_list.append(obj)
-        # print(comb_list[el].myset)   # minims(combins, mycount)
-    # print(comb_list)
+def minims(combins):
+    first = combins[::32]
+    second = combins[1::32]
+    third = combins[2::32]
+    forth = combins[3::32]
+    fifth = combins[4::32]
+    sixth = combins[5::32]
+    seventh = combins[6::32]
+    eights = combins[7::32]
+    more9 = combins[8::32]
+    more10 = combins[9::32]
+    more11 = combins[10::32]
+    more12 = combins[11::32]
+    more13 = combins[12::32]
+    more14 = combins[13::32]
+    more15 = combins[14::32]
+    more16 = combins[15::32]
+    more17 = combins[16::32]
+    more18 = combins[17::32]
+    more19 = combins[18::32]
+    more20 = combins[19::32]
+    more21 = combins[20::32]
+    more22 = combins[21::32]
+    more23 = combins[22::32]
+    more24 = combins[23::32]
+    more25 = combins[24::32]
+    more26 = combins[25::32]
+    more27 = combins[26::32]
+    more28 = combins[27::32]
+    more29 = combins[28::32]
+    more30 = combins[29::32]
+    more31 = combins[30::32]
+    more32 = combins[31::32]
+    # even = [combi for ind, combi in enumerate(combins) if ind%2]
+    if __name__ == '__main__':
+        # start 4 worker processes
+        with ThreadPoolExecutor() as pool:
+            pool.map(sql, first)
+            pool.map(sql, second)
+            pool.map(sql, third)
+            pool.map(sql, forth)
+            pool.map(sql, fifth)
+            pool.map(sql, sixth)
+            pool.map(sql, seventh)
+            pool.map(sql, eights)
+            pool.map(sql, more9)
+            pool.map(sql, more10)
+            pool.map(sql, more11)
+            pool.map(sql, more12)
+            pool.map(sql, more13)
+            pool.map(sql, more14)
+            pool.map(sql, more15)
+            pool.map(sql, more16)
+            pool.map(sql, more17)
+            pool.map(sql, more18)
+            pool.map(sql, more19)
+            pool.map(sql, more20)
+            pool.map(sql, more21)
+            pool.map(sql, more22)
+            pool.map(sql, more23)
+            pool.map(sql, more24)
+            pool.map(sql, more25)
+            pool.map(sql, more26)
+            pool.map(sql, more27)
+            pool.map(sql, more28)
+            pool.map(sql, more29)
+            pool.map(sql, more30)
+            pool.map(sql, more31)
+            pool.map(sql, more32)
 
-    with ThreadPool() as pool:
-        for i in comb_list:
-            pool.map(sql, i.myset)
 
-        # first = combins[::8]
-        # second = combins[1::8]
-        # third = combins[2::8]
-        # forth = combins[3::8]
-        # fifth = combins[4::8]
-        # sixth = combins[5::8]
-        # seventh = combins[6::8]
-        # eights = combins[7::8]
-        # # even = [combi for ind, combi in enumerate(combins) if ind%2]
-        # if __name__ == '__main__':
-        #     # start 4 worker processes
-        #     with ThreadPoolExecutor() as pool:
-        #         pool.map(sql, first)
-        #         pool.map(sql, second)
-        #         pool.map(sql, third)
-        #         pool.map(sql, forth)
-        #         pool.map(sql, fifth)
-        #         pool.map(sql, sixth)
-        #         pool.map(sql, seventh)
-        #         pool.map(sql, eights)
+# for digit in range(1, mylength - 2):  # для последовательного исключения из общего списка всех возможных сочетаний
+    # городов разной длины, чтобы можно было менять вьюшку (нет смысла исключать все города и оставлять в выборке менее
+    # 3 городов)
+digit = 8
+start_time = time.time()
 
+# if __name__ == '__main__':
+rest_count = mylength - digit
+# print(f'rest_count: {rest_count}')
+combi_count = ((rest_count) ** 2 - rest_count) / 2  # вычисляем количество уникальных  комбинаций городов после исключения
+# того числа, которое  берется на этой итерации
+#     print(f'combi_count: {combi_count}')
+combins = tuple(combinations(mylist, digit))  # собираем все соответствующие комбинации наборов кортежей
+print(f'combins: {len(combins)}')
+# z = 0
+coef_for_digit = []
+minims(combins)
 
-    # with concurrent.futures.ThreadPoolExecutor(max_workers=cpu) as executor:
-    #     # Start the load operations and mark each future with its URL
-    #     future_to_url = {executor.submit(sql, obj.myset): obj for obj in comb_list}
-    #     for future in concurrent.futures.as_completed(future_to_url):
-    #         combi = future_to_url[future]
-    #         try:
-    #             data = future.result()
-    #         except Exception as exc:
-    #             print('%r generated an exception: %s' % (combi, exc))
-            # else:
-            #     print('%r page is %d bytes' % (combi, len(data)))
-
-with open("/home/alexey/Загрузки/Fida_closeness_test.json", 'a', encoding='utf-8') as jsonfile:  # запись в json
+with open("/home/alexey/Fida_closeness_new.json", 'a', encoding='utf-8') as jsonfile:  # запись в json
     json.dump(coeff_all_digits, jsonfile)
     # writer.writerows(digit_dict)
     jsonfile.write('\n')
@@ -166,7 +219,7 @@ with open("/home/alexey/Загрузки/Fida_closeness_test.json", 'a', encodin
 
 finish_time = time.time()
 duration = (finish_time - start_time) / 60
-print(f'duration: {duration}')
+print(duration)
 
 # print(coeff_all_digits)
 

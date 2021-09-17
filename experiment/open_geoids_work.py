@@ -16,8 +16,8 @@ my_result = []
 mylength = len(mylist)
 # print(f'mylength: {mylength}')
 coeff_all_digits = {}
-digit = 2
-cpu = int(multiprocessing.cpu_count()/2)
+digit = 8
+cpu = 32 # int(multiprocessing.cpu_count()/2)
 # print(cpu)
 start_time = time.time()
 # if __name__ == '__main__':
@@ -33,7 +33,7 @@ coef_for_digit = []
 
 def sql(combi):
     # for combi in combin:
-    with closing(psycopg2.connect(f"dbname='Base' user='npkfrolov' password='123308' host='127.0.0.1' port='5432'")) \
+    with closing(psycopg2.connect(f"dbname='base' user='npkfrolov' password='123308' host='127.0.0.1' port='5432'")) \
             as conn:
         # print("Database opened successfully")
         cur = conn.cursor()
@@ -158,7 +158,7 @@ if __name__ == '__main__':
             # else:
             #     print('%r page is %d bytes' % (combi, len(data)))
 
-with open("/home/alexey/Загрузки/Fida_closeness_test.json", 'a', encoding='utf-8') as jsonfile:  # запись в json
+with open("/home/alexey/Fida_closeness_new.json", 'a', encoding='utf-8') as jsonfile:  # запись в json
     json.dump(coeff_all_digits, jsonfile)
     # writer.writerows(digit_dict)
     jsonfile.write('\n')
