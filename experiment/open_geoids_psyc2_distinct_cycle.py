@@ -16,14 +16,15 @@ my_result = []
 mylength = len(mylist)
 # print(f'mylength: {mylength}')
 coeff_all_digits = {}
-digit = 2 
-cpu = 1 # int(multiprocessing.cpu_count()/2)
+digit = 13
+cpu = 1  # int(multiprocessing.cpu_count()/2)
 # print(cpu)
 start_time = time.time()
 # if __name__ == '__main__':
 rest_count = mylength - digit
 # print(f'rest_count: {rest_count}')
-combi_count = ((rest_count) ** 2 - rest_count) / 2  # вычисляем количество уникальных  комбинаций городов после исключения
+combi_count = ((
+                   rest_count) ** 2 - rest_count) / 2  # вычисляем количество уникальных  комбинаций городов после исключения
 # того числа, которое  берется на этой итерации
 #     print(f'combi_count: {combi_count}')
 combins = tuple(combinations(mylist, digit))  # собираем все соответствующие комбинации наборов кортежей
@@ -31,9 +32,10 @@ print(f'combins: {len(combins)}')
 # z = 0
 coef_for_digit = []
 
+
 def sql(combi):
     # for combi in combin:
-    with closing(psycopg2.connect(f"dbname='base' user='npkfrolov' password='123308' host='127.0.0.1' port='5432'")) \
+    with closing(psycopg2.connect(f"dbname='Base' user='npkfrolov' password='123308' host='127.0.0.1' port='5432'")) \
             as conn:
         # print("Database opened successfully")
         cur = conn.cursor()
@@ -72,14 +74,12 @@ def sql(combi):
                                                                           FROM arabs.abu_meditterenian_places
                                                                         WHERE abu_meditterenian_places.fid = sph.first_city), ' - ', ( SELECT abu_meditterenian_places.toponym
                                                                           FROM arabs.abu_meditterenian_places
-                                                                        WHERE abu_meditterenian_places.fid = sph.second_city)) AS cities_names,
-                                                                    sph.first_city,
-                                                                    sph.second_city
+                                                                        WHERE abu_meditterenian_places.fid = sph.second_city)) AS cities_names
                                                                   FROM arabs.coords_python_saidsaid sph
                                                                     JOIN arabs.abu_meditterenian_calc_saidsaid geom ON geom.p1_fid = sph.first_city AND geom.p2_fid =
                                                                     sph.second_city AND (geom.p1_fid <> ALL (%s)) AND (geom.p2_fid <> ALL (%s))) 
                                                               AS allscopes
-                                                        WHERE abs(allscopes.scope - 0.0862::double precision) < 0.01::double precision)                                                                                               
+                                                        WHERE abs(allscopes.scope - 0.1397::double precision) < 0.01::double precision)                                                                                               
                                                       AS pairs_all_said)                                          
                                       AS wind_pairs
                                 GROUP BY wind_pairs.major_semi_axis, wind_pairs.minor_semi_axis, wind_pairs.count_pairs
@@ -97,10 +97,10 @@ def sql(combi):
         # conn.commit()
         result = cur.fetchone()
 
-      #  print(f'result: {result}')
+        #  print(f'result: {result}')
         if result[0] != None:
             result_int = int(result[0])
-        # print(f'result_int: {result_int}')
+            # print(f'result_int: {result_int}')
             coef = result_int / combi_count
         # print(f'coef: {coef}')
         else:
@@ -111,17 +111,20 @@ def sql(combi):
         # digit_dict = {digit: coef_for_digit}
         # print(coef_for_digit)
         # coeff_all_digits.update(digit_dict)
-        
 
-# for dig in range(digit, mylength-2):
+
+# for dig in range(digit, mylength - 2):
 
 digit_dict = {}
 
+
 class Thread:
     tread_count = 0
+
     def __init__(self, combins):
         self.myset = combins[Thread.tread_count::cpu]
         Thread.tread_count += 1
+
 
 if __name__ == '__main__':
     comb_list = []
@@ -135,13 +138,13 @@ if __name__ == '__main__':
 
     with ThreadPool() as pool:
         for i in comb_list:
-            if len(i.myset)>0:
+            if len(i.myset) > 0:
                 pool.map(sql, i.myset)
 
-tojson = {digit: digit_dict}
+coeff_all_digits.update({digit: digit_dict})
 
-with open("/home/alexey/Fida_closeness_correct.json", 'a', encoding='utf-8') as jsonfile:  # запись в json
-    json.dump(tojson, jsonfile)
+with open("/home/alexey/Fida_closeness_distinct.json", 'a', encoding='utf-8') as jsonfile:  # запись в json
+    json.dump(coeff_all_digits, jsonfile)
     # writer.writerows(digit_dict)
     jsonfile.write('\n')
     print("Готово. Записано в файл")

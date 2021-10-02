@@ -1,0 +1,61 @@
+CREATE OR REPLACE VIEW arabs.abu_meditterenian_calc
+ AS
+ SELECT row_number() OVER (ORDER BY foo.topo_1, foo.topo_2 DESC) AS row_number,
+    foo.topo_1,
+    foo.topo_2,
+    foo.minutes_lat_diff,
+    foo.minutes_long_diff,
+    foo.st_azimuth,
+    foo.st_distance,
+    foo.linegeo,
+    foo.arab_long1,
+    foo.arab_lat1,
+    foo.arab_long2,
+    foo.arab_lat2,
+    foo.p1_fid,
+    foo.p2_fid,
+    d.min_diff_dist,
+    d.shares,
+    foo.true_f_city,
+    foo.true_s_city,
+    foo.first_lon_grad,
+    foo.first_lon_min,
+    foo.first_lat_grad,
+    foo.first_lat_min,
+    foo.second_lon_grad,
+    foo.second_lon_min,
+    foo.second_lat_grad,
+    foo.second_lat_min
+   FROM ( SELECT s1.toponym AS topo_1,
+            s2.toponym AS topo_2,
+            s1.lat_fida_grad * 60 + s1.lat_fida_min - (s2.lat_fida_grad * 60 + s2.lat_fida_min) AS minutes_lat_diff,
+            st_azimuth(s1.wkb_geometry, s2.wkb_geometry) AS st_azimuth,
+            s1.wkb_geometry AS true_f_city,
+            s2.wkb_geometry AS true_s_city,
+            st_lengthspheroid(st_linefrommultipoint(st_collect(ARRAY[s1.wkb_geometry, s2.wkb_geometry])), 'SPHEROID("GRS_1980",6378137,298.257222101)'::spheroid) AS st_distance,
+            st_linefrommultipoint(st_collect(ARRAY[s1.wkb_geometry, s2.wkb_geometry])) AS linegeo,
+            s1.long_fida_grad * 60 + s1.long_fida_min - (s2.long_fida_grad * 60 + s2.long_fida_min) AS minutes_long_diff,
+            s1.fid AS p1_fid,
+            s2.fid AS p2_fid,
+            concat(s1.long_fida_grad, '.', s1.long_fida_min) AS arab_long1,
+            concat(s1.lat_fida_grad, '.', s1.lat_fida_min) AS arab_lat1,
+            concat(s2.long_fida_grad, '.', s2.long_fida_min) AS arab_long2,
+            concat(s2.lat_fida_grad, '.', s2.lat_fida_min) AS arab_lat2,
+            c1.long_fida_grad AS first_lon_grad,
+            c1.long_fida_min AS first_lon_min,
+            c1.lat_fida_grad AS first_lat_grad,
+            c1.lat_fida_min AS first_lat_min,
+            c2.long_fida_grad AS second_lon_grad,
+            c2.long_fida_min AS second_lon_min,
+            c2.lat_fida_grad AS second_lat_grad,
+            c2.lat_fida_min AS second_lat_min
+           FROM arabs.abu_meditterenian_said s1
+             JOIN arabs.abu_meditterenian_said s2 ON s1.fid <> s2.fid
+             JOIN arabs.abu_meditterenian_coords c1 ON c1.toponym_id = s1.fid
+             JOIN arabs.abu_meditterenian_coords c2 ON c2.toponym_id = s2.fid) foo
+     JOIN arabs.abu_meditterenian_said_diffs d ON d.first_point::text ~~ foo.topo_1::text AND d.second_point::text ~~ foo.topo_2::text;
+
+ALTER TABLE arabs.abu_meditterenian_calc
+    OWNER TO npkfrolov;
+COMMENT ON VIEW arabs.abu_meditterenian_calc
+    IS 'вьюшка для вычисления наиболее вероятного склонения "арабского" меридиана в сравнении с современным (на базе координат Ибн Саида). Сюда же добавлено поле разницы по долготам (также по Ибн Саиду). Также снабжена геометрией линий, соединяющих все точки. Убывающая сортировка по второму топониму для того, чтобы при моделировании можно было брать только половину списка пар, отбрасывая дубли. Для сравнения есть координаты реальные. Чтобы вытащить в скрипт пайтона минуты и пересчитать их в десятичные, пришлось в эту вьюшку вытащить изначальные данные. Они заменяют поля arab_long1-arab_lat2, но я не стал их удалять, поскольку тогда надо переделывать все зависимые вьюшки';

@@ -36,10 +36,10 @@ set_printoptions(edgeitems=100, precision=9)  # параметры вывода 
 # def inverse_flattening():
 
 
-conn = psycopg2.connect(f"dbname='Base' user='npkfrolov' password='123308' host='127.0.0.1' port='5432'")
+conn = psycopg2.connect(f"dbname='base' user='npkfrolov' password='123308' host='127.0.0.1' port='5432'")
 print("Database opened successfully")
 cur = conn.cursor()
-cur.execute('SELECT * FROM arabs.abu_meditterenian_calc_saidsaid WHERE p1_fid < p2_fid')
+cur.execute('SELECT * FROM arabs.abu_meditterenian_calc WHERE p1_fid < p2_fid')
 dbrecords_calc = cur.fetchall() # [x for x in cur.fetchall() if x[1]=='Махдия' and x[2]=='Толмейта']
 # print(dbrecords_calc)
 scope = 0.1397  # от этого параметра зависит, какие пары городов будут участвовать в результате в поисках общих параметров
@@ -76,19 +76,19 @@ for row in dbrecords_calc:  # по строкам БД, в строке одна
     for ind, el in enumerate(template):  # перебираем варианты длины большой полуоси для каждого значения малой,
         # обращаясь по индексу к списку вариантов
         row_x = []  # сюда собираем результаты измерений постгис на заданном эллипсоиде
-        print(ind, el)
+        # print(ind, el)
         for num, x in enumerate(el):
             semi_major_axis = int(axis_a_range[num])
         #     print(ind, semi_major_axis)
             # for fl in el:  # перебираем варианты коэффициента полярного сжатия внутри одного варианта длины большой полуоси
             # print(f'{ind}) {pairs}: {fl}')
-            cur.execute('''SELECT ST_distanceSpheroid(ST_GeomFromText(%s), ST_GeomFromText(%s), 'SPHEROID["USER", %s, %s]')''', (point1, point2, semi_major_axis, x))
+            cur.execute('''SELECT ST_distanceSpheroid(ST_GeomFromText(%s), ST_GeomFromText(%s), 'SPHEROID["USER",%s,%s]')''', (point1, point2, semi_major_axis, el[num]))
             dbrecords_distances = cur.fetchall()
             row_x.extend(*dbrecords_distances)  # отправляем результаты измерений в список, общий для одного варианта
             # длины большой полуоси
-            # if pairs == 'Акко - Бейрут':
-            #         if int(dbrecords_distances[0][0]):
-            #             print(f'{pairs}:{semi_major_axis}/{el[num]}:{dbrecords_distances}, {point1}/{point2}')
+            # if pairs == 'Махдия - Толмейта':
+            #         if int(524000<dbrecords_distances[0][0])<544000:
+            # print(f'{pairs}:{semi_major_axis}/{el[num]}:{dbrecords_distances}, {point1}/{point2}')
         # print(row_x)
         matrix.extend(row_x)
 
@@ -102,26 +102,26 @@ for row in dbrecords_calc:  # по строкам БД, в строке одна
     # городами, чтобы не просто вычислить разницу, но оценить, какую долю эта разница составляет от расстояния между
     # пунктами
 
-    # diff_min = abs(diff_share).min()
-    # SQL = "INSERT INTO arabs.abu_meditterenian_said_diffs (first_point, second_point, shares) VALUES (%s, %s, %s);"
-    # data = (first_point, second_point, diff_min)
-    # cur.execute(SQL, data)  # такое решение помогает избежать SQL-инъекций
-    # conn.commit()  # этот блок для заполнения БД значениями минимальных расхождений
+    diff_min = abs(diff_share).min()
+    SQL = "INSERT INTO arabs.abu_meditterenian_said_diffs (first_point, second_point, shares) VALUES (%s, %s, %s);"
+    data = (first_point, second_point, diff_min)
+    cur.execute(SQL, data)  # такое решение помогает избежать SQL-инъекций
+    conn.commit()  # этот блок для заполнения БД значениями минимальных расхождений
 
     # print(f'{pairs}: {abs(diff_share).min()}')
-    filtered = argwhere(abs(diff_share) < scope)  # отбираем индексы только тех ячеек, в которых значения меньше выбранного
+ #   filtered = argwhere(abs(diff_share) < scope)  # отбираем индексы только тех ячеек, в которых значения меньше выбранного
     # порога. Поленился переделывать код, но в нынешнем виде код требует редактирования для выполнения всего
     # алгоритма. Селект из таблицы calc должен забирать данные о минимальной доле расхождений, но это поле
     # генерируется по результатам обработки данных на основании таблицы calc. По-правильному нужно создавать еще одну
     # вьюшку, объединяющую calc и shares, и для расчета множеств работать уже с ней
     # matchlist = []  # сюда собираем кортежи из пар (длина большой полуоси, длина малой полуоси) одной пары городов
     # print(filtered)
-    for j in filtered:  # перебираем все отобранные варианты индексов и по ним находим значения длин полуосей
-        filt_x = int(axis_a_range[j[1]])
-        filt_y = int(axis_b_range[j[0]])
+ #   for j in filtered:  # перебираем все отобранные варианты индексов и по ним находим значения длин полуосей
+    #    filt_x = int(axis_a_range[j[1]])
+    #    filt_y = int(axis_b_range[j[0]])
         # print(f'{j}:{axis_a_range[j[1]]}:{axis_b_range[j[0]]}')
-        # SQL = "INSERT INTO arabs.coords_python_saidsaid (first_city, second_city, major_semi_axis, minor_semi_axis, scope) VALUES (%s, %s, %s, %s, %s);"
-        data = (first_fid, second_fid, filt_x, filt_y, scope)
+    #    SQL = "INSERT INTO arabs.coords_python_saidsaid (first_city, second_city, major_semi_axis, minor_semi_axis, scope) VALUES (%s, %s, %s, %s, %s);"
+    #    data = (first_fid, second_fid, filt_x, filt_y, scope)
     #     # print(type(first_fid), type(second_fid), type(filt_x), type(filt_y), type(scope))
     #     cur.execute(SQL, data)  # такое решение помогает избежать SQL-инъекций
     #     conn.commit()  # завершаем транзакцию после записи всех инсертов

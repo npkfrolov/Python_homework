@@ -16,7 +16,7 @@ my_result = []
 mylength = len(mylist)
 # print(f'mylength: {mylength}')
 coeff_all_digits = {}
-digit = 2 
+digit = 13
 cpu = 1 # int(multiprocessing.cpu_count()/2)
 # print(cpu)
 start_time = time.time()
@@ -72,14 +72,12 @@ def sql(combi):
                                                                           FROM arabs.abu_meditterenian_places
                                                                         WHERE abu_meditterenian_places.fid = sph.first_city), ' - ', ( SELECT abu_meditterenian_places.toponym
                                                                           FROM arabs.abu_meditterenian_places
-                                                                        WHERE abu_meditterenian_places.fid = sph.second_city)) AS cities_names,
-                                                                    sph.first_city,
-                                                                    sph.second_city
+                                                                        WHERE abu_meditterenian_places.fid = sph.second_city)) AS cities_names
                                                                   FROM arabs.coords_python_saidsaid sph
                                                                     JOIN arabs.abu_meditterenian_calc_saidsaid geom ON geom.p1_fid = sph.first_city AND geom.p2_fid =
                                                                     sph.second_city AND (geom.p1_fid <> ALL (%s)) AND (geom.p2_fid <> ALL (%s))) 
                                                               AS allscopes
-                                                        WHERE abs(allscopes.scope - 0.0862::double precision) < 0.01::double precision)                                                                                               
+                                                        WHERE abs(allscopes.scope - 0.1397::double precision) < 0.01::double precision)                                                                                               
                                                       AS pairs_all_said)                                          
                                       AS wind_pairs
                                 GROUP BY wind_pairs.major_semi_axis, wind_pairs.minor_semi_axis, wind_pairs.count_pairs
@@ -140,7 +138,7 @@ if __name__ == '__main__':
 
 tojson = {digit: digit_dict}
 
-with open("/home/alexey/Fida_closeness_correct.json", 'a', encoding='utf-8') as jsonfile:  # запись в json
+with open("/home/alexey/Fida_closeness_distinct.json", 'a', encoding='utf-8') as jsonfile:  # запись в json
     json.dump(tojson, jsonfile)
     # writer.writerows(digit_dict)
     jsonfile.write('\n')

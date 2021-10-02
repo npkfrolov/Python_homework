@@ -1,0 +1,58 @@
+-- View: arabs.abu_meditterenian_calc_saidsaid
+
+-- DROP VIEW arabs.abu_meditterenian_calc_saidsaid;
+
+CREATE OR REPLACE VIEW arabs.abu_meditterenian_calc_saidsaid
+ AS
+ SELECT row_number() OVER (ORDER BY foo.topo_1, foo.topo_2 DESC) AS row_number,
+    foo.topo_1,
+    foo.topo_2,
+    foo.minutes_lat_diff,
+    foo.minutes_long_diff,
+    foo.st_azimuth,
+    foo.st_distance,
+    foo.linegeo,
+    foo.p1_fid,
+    foo.p2_fid,
+    d.shares,
+    foo.true_f_city,
+    foo.true_s_city,
+    foo.first_lon_grad,
+    foo.first_lon_min,
+    foo.first_lat_grad,
+    foo.first_lat_min,
+    foo.second_lon_grad,
+    foo.second_lon_min,
+    foo.second_lat_grad,
+    foo.second_lat_min
+   FROM ( SELECT s1.toponym AS topo_1,
+            s2.toponym AS topo_2,
+            c1.lat_fida_grad * 60 + c1.lat_fida_min - (c2.lat_fida_grad * 60 + c2.lat_fida_min) AS minutes_lat_diff,
+            st_azimuth(s1.wkb_geometry, s2.wkb_geometry) AS st_azimuth,
+            s1.wkb_geometry AS true_f_city,
+            s2.wkb_geometry AS true_s_city,
+            st_lengthspheroid(st_linefrommultipoint(st_collect(ARRAY[s1.wkb_geometry, s2.wkb_geometry])), 'SPHEROID("GRS_1980",6378137,298.257222101)'::spheroid) AS st_distance,
+            st_linefrommultipoint(st_collect(ARRAY[s1.wkb_geometry, s2.wkb_geometry])) AS linegeo,
+            c1.long_fida_grad * 60 + c1.long_fida_min - (c2.long_fida_grad * 60 + c2.long_fida_min) AS minutes_long_diff,
+            s1.fid AS p1_fid,
+            s2.fid AS p2_fid,
+            c1.long_fida_grad AS first_lon_grad,
+            c1.long_fida_min AS first_lon_min,
+            c1.lat_fida_grad AS first_lat_grad,
+            c1.lat_fida_min AS first_lat_min,
+            c2.long_fida_grad AS second_lon_grad,
+            c2.long_fida_min AS second_lon_min,
+            c2.lat_fida_grad AS second_lat_grad,
+            c2.lat_fida_min AS second_lat_min
+           FROM arabs.abu_meditterenian_said s1
+             JOIN arabs.abu_meditterenian_said s2 ON s1.fid <> s2.fid
+             JOIN arabs.abu_meditterenian_coords_saidsaid c1 ON c1.toponym_id = s1.fid
+             JOIN arabs.abu_meditterenian_coords_saidsaid c2 ON c2.toponym_id = s2.fid) foo
+     JOIN arabs.abu_meditterenian_said_diffs d ON d.fid > 1201 AND d.first_point::text ~~ foo.topo_1::text AND d.second_point::text ~~ foo.topo_2::text;
+
+ALTER TABLE arabs.abu_meditterenian_calc_saidsaid
+    OWNER TO npkfrolov;
+COMMENT ON VIEW arabs.abu_meditterenian_calc_saidsaid
+    IS 'вьюшка для вычисления наиболее вероятного склонения "арабского" меридиана в сравнении с современным (на базе координат Ибн Саида, взятых не у АбулФиды, а именно у Саида (из справочника Кеннеди)).';
+
+
