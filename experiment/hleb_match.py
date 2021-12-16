@@ -15,21 +15,22 @@ rozh_price = 10
 oves_price = 5
 pshen_price = 14
 yachmen_price = 7
-look_for_match = 352  # float(input('Соответствие какой сумме мы ищем (в деньгах)?'))
-obji_count = 10.5  # float(input('Сколько обеж у нас есть?'))
+look_for_match = 536.5  # float(input('Соответствие какой сумме мы ищем (в деньгах)?'))
+obji_count = 14.5  # float(input('Сколько обеж у нас есть?'))
 obj_step = 0.5
 corob_step = 0.25
 scope_na_obju = 4
 
 norma_corob = arange(0, scope_na_obju + corob_step, corob_step, dtype=float32)  # это варианты нормы (в коробьях хлеба),
 # по которой дается хлеб с одного варианта количества обеж
-print(f'Для заданного обежного оклада используются следующие комбинации норм в коробьях: {norma_corob}')
+print(f'Для заданного обежного оклада используются следующие варианты норм в коробьях: {norma_corob}')
 
 list_obj = arange(obj_step, obji_count + obj_step, obj_step, dtype=float32)  # это варианты количества обеж, платящих хлебный
 # оброк
+# print(list_obj)
 combins_obj = []
 
-for j in range(4):  # range(int(obji_count/2)+2):
+for j in range(int(obji_count/2)+2): # range(4):  # Длина цикла определяет, из какого числа элементов создаются комбинации
     mylist = [i for i in list(itertools.combinations(list_obj, j)) if sum(i) == obji_count]  # делаем список всех
     # вариантов деления обеж на группы, в сумме дающих известное число обеж владения
     combins_obj.extend(mylist)
@@ -107,7 +108,8 @@ def money_summ(arr, rows):     # считаем суммы денежных пл
         arr_prod_prices.shape = list_of_table  # приводим массив к форме, готовой для трансляции
         # print(f'{ind}: {arr_prod_prices}')
         array_money_dims.append(arr_prod_prices)
-    return array_money_dims
+    # return array_money_dims
+    print(array_money_dims)
 
 
 templates_all_combs = []
@@ -137,6 +139,7 @@ for tupl in combins_obj:     # перебираем кортежи, предст
 def vars_one_tuple(mytupl):
     # template_list = None
     template_accum_4items = [templates_all_combs[mytupl]]*4
+    # print(template_accum_4items)
     unnest_list = [*template_accum_4items]  # здесь избавляемся от первой вложенности
     unnest_corob_4items = list(itertools.chain.from_iterable(unnest_list))  # для каждой комбинации обежных групп
     # получаем
@@ -147,31 +150,34 @@ def vars_one_tuple(mytupl):
     # матрицу со всеми комбинациями платежей от разных групп обеж по всем сортам хлеба
     # unnest_corob_4items = None
 
-    dengi = four_dim == look_for_match
-    dengi_ind = argwhere(dengi)
+    # dengi = four_dim == look_for_match
+    # dengi_ind = argwhere(dengi)
+    return four_dim
 
-    duplicates_away = []
-    for i in dengi_ind:
-        for j in i.reshape(-1, length):
-            if len(i) == len(set(i)):
-                duplicates_away.append(i)
+    # duplicates_away = []
+    # for i in dengi_ind:
+    #     for j in i.reshape(-1, length):
+    #         if len(i) == len(set(i)):
+    #             duplicates_away.append(i)
+    #
+    # duplicates_cleared = unique(duplicates_away, axis=0)
+    #
+    # set_printoptions(edgeitems=100)
+    # # print(f'По группе обеж {tupl} выявлено {duplicates_cleared.size/(length*4)} комбинаций')
+    # # print(f'Кортеж {tupl}: {temp.reshape[[len(norma_corob)]*length*4]}')
+    # question1 = 2  # int(input(f'Оставить только варианты, где нормы сортов хлеба одинаковы для каждой группы обеж
+    # # (да - 1, нет - 2): '))
+    # if question1 == 1:
+    #     # print(duplicates_cleared)
+    #     answer1 = equal_norms(duplicates_cleared)
+    #     # print(answer1)
+    #     for k in answer1:
+    #         print(f'Совпадения по сумме денег, группа обеж {tupl}: {k} "-->" рожь: {norma_corob[k][0]}, '
+    #               f'овес: {norma_corob[k][1]}, пшеница: {norma_corob[k][2]}, ячмень: {norma_corob[k][3]}')
+    #         # здесь вместо индексов должны быть суммы по индексам одного сорта хлеба
+    #         print(f'Всего комбинаций{len(answer1)}')
 
-    duplicates_cleared = unique(duplicates_away, axis=0)
 
-    set_printoptions(edgeitems=100)
-    # print(f'По группе обеж {tupl} выявлено {duplicates_cleared.size/(length*4)} комбинаций')
-    # print(f'Кортеж {tupl}: {temp.reshape[[len(norma_corob)]*length*4]}')
-    question1 = 2  # int(input(f'Оставить только варианты, где нормы сортов хлеба одинаковы для каждой группы обеж
-    # (да - 1, нет - 2): '))
-    if question1 == 1:
-        # print(duplicates_cleared)
-        answer1 = equal_norms(duplicates_cleared)
-        # print(answer1)
-        for k in answer1:
-            print(f'Совпадения по сумме денег, группа обеж {tupl}: {k} "-->" рожь: {norma_corob[k][0]}, '
-                  f'овес: {norma_corob[k][1]}, пшеница: {norma_corob[k][2]}, ячмень: {norma_corob[k][3]}')
-            # здесь вместо индексов должны быть суммы по индексам одного сорта хлеба
-            print(f'Всего комбинаций{len(answer1)}')
     # else:
     #     question2 = int(input(f'Выбрать комбинации норм, которые при выбранной комбинации обеж дают заданные объемы
     #     # хлеба (да - 1, нет - 2): '))
@@ -238,9 +244,12 @@ match_corob()
 
 mytuple = int(input(f'С какой комбинацией обеж будем работать? Ввести номер от 0 до {len(combins_obj)-1}: '))
 length = len(combins_obj[mytuple])
+# print(length)
 rows_count = len(norma_corob)
+# print(rows_count)
+result = vars_one_tuple(mytuple)
 
-print(vars_one_tuple(mytuple))
+print(result)
 # print(four_dim.itemsize)
 # print(f'Сумма коробей на один вариант комбинации обеж: {match_corob()}')
 

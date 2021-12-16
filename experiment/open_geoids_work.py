@@ -16,7 +16,7 @@ my_result = []
 mylength = len(mylist)
 # print(f'mylength: {mylength}')
 coeff_all_digits = {}
-digit = 2 
+digit = 11 
 cpu = 1 # int(multiprocessing.cpu_count()/2)
 # print(cpu)
 start_time = time.time()
@@ -45,29 +45,32 @@ def sql(combi):
                 array_agg(aggr_pairs_all_said.count_pairs) AS count_pairs,
                 aggr_pairs_all_said.count_pairs AS count_comb
                FROM            
-                  (SELECT aggr_cities.count_pairs,
+                  (SELECT count(*) OVER (PARTITION BY aggr_cities.cities_names ORDER BY aggr_cities.cities_names) AS count_sph,
+                    aggr_cities.count_pairs,
+                    aggr_cities.major_semi_axis,
+                    aggr_cities.minor_semi_axis,
                     aggr_cities.cities_names
                         FROM                       
                           ( SELECT string_agg(wind_pairs.cities_names, '; '::text ORDER BY wind_pairs.cities_names) AS cities_names,
+                                  wind_pairs.major_semi_axis,
+                                  wind_pairs.minor_semi_axis,
                                   wind_pairs.count_pairs                            
                                 FROM                             
                                     ( SELECT count(*) OVER (PARTITION BY pairs_all_said.major_semi_axis, pairs_all_said.minor_semi_axis ORDER BY pairs_all_said.major_semi_axis, pairs_all_said.minor_semi_axis) AS count_pairs,
                                               pairs_all_said.major_semi_axis,
                                               pairs_all_said.minor_semi_axis,
-                                              pairs_all_said.count,
                                               pairs_all_said.cities_names
                                             FROM                                         
                                                     (SELECT allscopes.major_semi_axis,
                                                           allscopes.minor_semi_axis,
-                                                          allscopes.count,
-                                                          allscopes.cities_names
+                                                          allscopes.scope,
+                                                          allscopes.cities_names,
+                                                          allscopes.first_city,
+                                                          allscopes.second_city
                                                           FROM 
-                                                            ( SELECT DISTINCT sph.major_semi_axis,
+                                                            ( SELECT sph.major_semi_axis,
                                                                   sph.minor_semi_axis,
                                                                   sph.scope,
-                                                                  (count(*) OVER (PARTITION BY sph.major_semi_axis, 
-                                                                  sph.minor_semi_axis, sph.scope ORDER BY 
-                                                                  sph.major_semi_axis, sph.minor_semi_axis, sph.scope))/2 AS count,
                                                                   concat(( SELECT abu_meditterenian_places.toponym
                                                                           FROM arabs.abu_meditterenian_places
                                                                         WHERE abu_meditterenian_places.fid = sph.first_city), ' - ', ( SELECT abu_meditterenian_places.toponym
@@ -75,11 +78,9 @@ def sql(combi):
                                                                         WHERE abu_meditterenian_places.fid = sph.second_city)) AS cities_names,
                                                                     sph.first_city,
                                                                     sph.second_city
-                                                                  FROM arabs.coords_python_saidsaid sph
-                                                                    JOIN arabs.abu_meditterenian_calc_saidsaid geom ON geom.p1_fid = sph.first_city AND geom.p2_fid =
-                                                                    sph.second_city AND (geom.p1_fid <> ALL (%s)) AND (geom.p2_fid <> ALL (%s))) 
+                                                                  FROM arabs.coords_python_saidsaid sph) 
                                                               AS allscopes
-                                                        WHERE abs(allscopes.scope - 0.0862::double precision) < 0.01::double precision)                                                                                               
+                                                        WHERE abs(allscopes.scope - 0.0862::double precision) < 0.01::double precision AND (allscopes.first_city <> ALL (%s)) AND (allscopes.second_city <> ALL (%s)))                                                                                       
                                                       AS pairs_all_said)                                          
                                       AS wind_pairs
                                 GROUP BY wind_pairs.major_semi_axis, wind_pairs.minor_semi_axis, wind_pairs.count_pairs
@@ -87,7 +88,7 @@ def sql(combi):
                             AS aggr_cities) 
                   AS aggr_pairs_all_said
               GROUP BY aggr_pairs_all_said.cities_names, aggr_pairs_all_said.count_pairs
-              ORDER BY aggr_pairs_all_said.cities_names) 
+              ORDER BY aggr_pairs_all_said.count_pairs, aggr_pairs_all_said.cities_names) 
           AS aggr_sph;'''
         # combi = [2, 3]
         list_combi = list(combi)
@@ -140,7 +141,7 @@ if __name__ == '__main__':
 
 tojson = {digit: digit_dict}
 
-with open("/home/alexey/Fida_closeness_correct.json", 'a', encoding='utf-8') as jsonfile:  # запись в json
+with open("/home/alexey/Fida_closeness_october.json", 'a', encoding='utf-8') as jsonfile:  # запись в json
     json.dump(tojson, jsonfile)
     # writer.writerows(digit_dict)
     jsonfile.write('\n')

@@ -42,7 +42,7 @@ cur = conn.cursor()
 cur.execute('SELECT * FROM arabs.abu_meditterenian_calc WHERE p1_fid < p2_fid')
 dbrecords_calc = cur.fetchall() # [x for x in cur.fetchall() if x[1]=='Махдия' and x[2]=='Толмейта']
 # print(dbrecords_calc)
-scope = 0.1397  # от этого параметра зависит, какие пары городов будут участвовать в результате в поисках общих параметров
+scope = 0.0862  # от этого параметра зависит, какие пары городов будут участвовать в результате в поисках общих параметров
 # эллипсоида. Анализ распределения минимальных значений расхождения расстояний с реальными (на основе естественных
 # интервалов Дженкса) не очень точно характеризует релевантность данных, поскольку не учитывает ту долю, которую
 # составляет расхождение от реального расстояния между городами. Поэтому вместо этого на интервалы Дженкинса разбивался
@@ -102,29 +102,29 @@ for row in dbrecords_calc:  # по строкам БД, в строке одна
     # городами, чтобы не просто вычислить разницу, но оценить, какую долю эта разница составляет от расстояния между
     # пунктами
 
-    diff_min = abs(diff_share).min()
-    SQL = "INSERT INTO arabs.abu_meditterenian_said_diffs (first_point, second_point, shares) VALUES (%s, %s, %s);"
-    data = (first_point, second_point, diff_min)
-    cur.execute(SQL, data)  # такое решение помогает избежать SQL-инъекций
-    conn.commit()  # этот блок для заполнения БД значениями минимальных расхождений
+    #diff_min = abs(diff_share).min()
+    #SQL = "INSERT INTO arabs.abu_meditterenian_said_diffs (first_point, second_point, shares) VALUES (%s, %s, %s);"
+    #data = (first_point, second_point, diff_min)
+    #cur.execute(SQL, data)  # такое решение помогает избежать SQL-инъекций
+    #conn.commit()  # этот блок для заполнения БД значениями минимальных расхождений
 
     # print(f'{pairs}: {abs(diff_share).min()}')
- #   filtered = argwhere(abs(diff_share) < scope)  # отбираем индексы только тех ячеек, в которых значения меньше выбранного
+    filtered = argwhere(abs(diff_share) < scope)  # отбираем индексы только тех ячеек, в которых значения меньше выбранного
     # порога. Поленился переделывать код, но в нынешнем виде код требует редактирования для выполнения всего
     # алгоритма. Селект из таблицы calc должен забирать данные о минимальной доле расхождений, но это поле
     # генерируется по результатам обработки данных на основании таблицы calc. По-правильному нужно создавать еще одну
     # вьюшку, объединяющую calc и shares, и для расчета множеств работать уже с ней
     # matchlist = []  # сюда собираем кортежи из пар (длина большой полуоси, длина малой полуоси) одной пары городов
     # print(filtered)
- #   for j in filtered:  # перебираем все отобранные варианты индексов и по ним находим значения длин полуосей
-    #    filt_x = int(axis_a_range[j[1]])
-    #    filt_y = int(axis_b_range[j[0]])
+    for j in filtered:  # перебираем все отобранные варианты индексов и по ним находим значения длин полуосей
+        filt_x = int(axis_a_range[j[1]])
+        filt_y = int(axis_b_range[j[0]])
         # print(f'{j}:{axis_a_range[j[1]]}:{axis_b_range[j[0]]}')
-    #    SQL = "INSERT INTO arabs.coords_python_saidsaid (first_city, second_city, major_semi_axis, minor_semi_axis, scope) VALUES (%s, %s, %s, %s, %s);"
-    #    data = (first_fid, second_fid, filt_x, filt_y, scope)
+        SQL = "INSERT INTO arabs.coords_python (first_city, second_city, major_semi_axis, minor_semi_axis, scope) VALUES (%s, %s, %s, %s, %s);"
+        data = (first_fid, second_fid, filt_x, filt_y, scope)
     #     # print(type(first_fid), type(second_fid), type(filt_x), type(filt_y), type(scope))
-    #     cur.execute(SQL, data)  # такое решение помогает избежать SQL-инъекций
-    #     conn.commit()  # завершаем транзакцию после записи всех инсертов
+        cur.execute(SQL, data)  # такое решение помогает избежать SQL-инъекций
+        conn.commit()  # завершаем транзакцию после записи всех инсертов
     print(f'Данные о параметрах городов {pairs} отправлены в БД')
 
 
