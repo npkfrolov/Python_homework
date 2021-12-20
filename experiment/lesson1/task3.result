@@ -1,0 +1,7 @@
+/home/alexey/git_python/Python_homework/new_env_experim/bin/python /home/alexey/git_python/Python_homework/experiment/lesson1/task3.py
+b'attribute'
+Cтрока "класс" не может быть записана в байтовом типе
+Cтрока "функция" не может быть записана в байтовом типе
+b'type'
+
+Process finished with exit code 0

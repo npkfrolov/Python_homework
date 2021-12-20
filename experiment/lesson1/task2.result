@@ -1,0 +1,12 @@
+/home/alexey/git_python/Python_homework/new_env_experim/bin/python /home/alexey/git_python/Python_homework/experiment/lesson1/task2.py
+тип: <class 'bytes'>
+содержимое: b'class'
+длина переменной: 5
+тип: <class 'bytes'>
+содержимое: b'function'
+длина переменной: 8
+тип: <class 'bytes'>
+содержимое: b'method'
+длина переменной: 6
+
+Process finished with exit code 0

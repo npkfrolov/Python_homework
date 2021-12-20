@@ -1,0 +1,30 @@
+/home/alexey/git_python/Python_homework/new_env_experim/bin/python /home/alexey/git_python/Python_homework/experiment/lesson1/task5.py
+Дефолтная кодировка: UTF-8
+Два варианта - байты (NODECODE) и строка Юникод (DECODE)
+NODECODE: b'PING yandex.ru (5.255.255.60) 56(84) bytes of data.\n' & DECODE: PING yandex.ru (5.255.255.60) 56(84) bytes of data.
+
+NODECODE: b'64 bytes from yandex.ru (5.255.255.60): icmp_seq=1 ttl=248 time=15.8 ms\n' & DECODE: 64 bytes from yandex.ru (5.255.255.60): icmp_seq=1 ttl=248 time=15.8 ms
+
+NODECODE: b'\n' & DECODE:
+
+NODECODE: b'--- yandex.ru ping statistics ---\n' & DECODE: --- yandex.ru ping statistics ---
+
+NODECODE: b'1 packets transmitted, 1 received, 0% packet loss, time 0ms\n' & DECODE: 1 packets transmitted, 1 received, 0% packet loss, time 0ms
+
+NODECODE: b'rtt min/avg/max/mdev = 15.831/15.831/15.831/0.000 ms\n' & DECODE: rtt min/avg/max/mdev = 15.831/15.831/15.831/0.000 ms
+
+Два варианта - байты (NODECODE) и строка Юникод (DECODE)
+NODECODE: b'PING youtube.com (74.125.205.136) 56(84) bytes of data.\n' & DECODE: PING youtube.com (74.125.205.136) 56(84) bytes of data.
+
+NODECODE: b'64 bytes from le-in-f136.1e100.net (74.125.205.136): icmp_seq=1 ttl=106 time=30.1 ms\n' & DECODE: 64 bytes from le-in-f136.1e100.net (74.125.205.136): icmp_seq=1 ttl=106 time=30.1 ms
+
+NODECODE: b'\n' & DECODE:
+
+NODECODE: b'--- youtube.com ping statistics ---\n' & DECODE: --- youtube.com ping statistics ---
+
+NODECODE: b'1 packets transmitted, 1 received, 0% packet loss, time 0ms\n' & DECODE: 1 packets transmitted, 1 received, 0% packet loss, time 0ms
+
+NODECODE: b'rtt min/avg/max/mdev = 30.119/30.119/30.119/0.000 ms\n' & DECODE: rtt min/avg/max/mdev = 30.119/30.119/30.119/0.000 ms
+
+
+Process finished with exit code 0
