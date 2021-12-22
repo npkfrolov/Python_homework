@@ -1,0 +1,1 @@
+SELECT name, user_id FROM users u INNER JOIN orders o WHERE u.id = o.user_id;
