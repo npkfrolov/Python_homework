@@ -1,0 +1,15 @@
+/home/alexey/git_python/Python_homework/new_env_experim/bin/python /home/alexey/git_python/Python_homework/experiment/lesson1/task1.py
+тип переменной: <class 'str'>
+содержание переменной: разработка
+тип переменной (юникод-строка): <class 'str'>
+содержание переменной (юникод-строка): разработка
+тип переменной: <class 'str'>
+содержание переменной: сокет
+тип переменной (юникод-строка): <class 'str'>
+содержание переменной (юникод-строка): сокет
+тип переменной: <class 'str'>
+содержание переменной: декоратор
+тип переменной (юникод-строка): <class 'str'>
+содержание переменной (юникод-строка): декоратор
+
+Process finished with exit code 0
