@@ -5,13 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7a99d6e7-3d40-4888-a0f6-e80bf43a9589" name="Default Changelist" comment="1) Переделал hleb_match в более универсальную прогу. Разбил на отдельные функции, запускаемые по необходимости. 2) Тип данных float32 дает меньше ошибок при сравнении чисел - float16 считает равными числа,отличающиеся на 0,125. 3) Отдельная функция превращения набора одномерных массивов в набор массивов с общей размерностью, готовых к операциям по осям. Вместо создания множества одномерных массивов перемножением на цены сначала делается один шаблон путем умножения комбинаций обеж на варианты норм. Он одинаков для всех сортов хлеба. И уже потом, если надо, множим на цены отдельные измерения массива. 4) для удаления лишних комбинаций функция сравнивает значения внутри кортежа из норм, примененных к разным группам обеж. Если они равны, то по сути две группы образуют одну - и это рассмотрено в матрице соответствующей мерности. Так что из данной мерности они исключаются. 5) функция match_corob подбирает все комбинации коробей, дающие в сумме заданное число">
-      <change afterPath="$PROJECT_DIR$/lesson1/task1.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lesson1/task2.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lesson1/task3.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lesson1/task4.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lesson1/task5.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lesson1/task6.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lesson1/test_file.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,10 +45,55 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/../new_env_experim" />
-    <property name="settings.editor.selected.configurable" value="advanced.settings" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
-  <component name="RunManager" selected="Python.task1">
+  <component name="RunManager" selected="Python.client">
+    <configuration name="client" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="experiment" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/lesson3" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lesson3/client.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="server" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="experiment" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/lesson3" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lesson3/server.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="task1" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="experiment" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -67,6 +106,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lesson1/task1.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
@@ -76,19 +116,20 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="task2" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="task2 (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="experiment" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/lesson1" />
-      <option name="IS_MODULE_SDK" value="true" />
+      <option name="SDK_HOME" value="$PROJECT_DIR$/../new_env_experim/bin/python" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/lesson2" />
+      <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lesson1/task2.py" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lesson2/task2.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -109,6 +150,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lesson1/task3.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
@@ -118,62 +160,20 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="task4" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="experiment" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/lesson1" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lesson1/task4.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="task6" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="experiment" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/lesson1" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lesson1/task6.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
     <list>
-      <item itemvalue="Python.task2" />
-      <item itemvalue="Python.task6" />
-      <item itemvalue="Python.task4" />
       <item itemvalue="Python.task3" />
       <item itemvalue="Python.task1" />
+      <item itemvalue="Python.task2 (1)" />
+      <item itemvalue="Python.server" />
+      <item itemvalue="Python.client" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.task1" />
-        <item itemvalue="Python.task2" />
+        <item itemvalue="Python.client" />
+        <item itemvalue="Python.server" />
+        <item itemvalue="Python.task2 (1)" />
         <item itemvalue="Python.task3" />
-        <item itemvalue="Python.task4" />
-        <item itemvalue="Python.task6" />
+        <item itemvalue="Python.task1" />
       </list>
     </recent_temporary>
   </component>
@@ -185,6 +185,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1619291958154</updated>
+      <workItem from="1640336719516" duration="46953000" />
     </task>
     <task id="LOCAL-00001" summary="1) не до конца удачный парсер для сайта - много приходилось копипастить вручную из-за того, например, что как отдельный абзац парсилась целая колонка сайта, не учитывались элементы дополнительной инфраструктуры (списки изданий, списки источников и тд).&#10;2)модуль для подбора оптимального варианта длины арабского градуса широты&#10;3) подбор вариантов платежей за хлеб разными группами владений по разным нормам и четырем сортам. В этом коммите дошел до создания четырех массивов, мерность которых определяется числом групп обеж, на которые разбивается общее число обеж владения. Остановился на механизме слияния их в один массив, в котором размерность вчетверо выше - чтобы просчитать все варианты сумм по всем сортам хлеба. Возможно, правильнее сначала сделать многомерный массив из векторов - платежей одной группы обеж одним сортом хлеба. И потом их все уже суммировать для поиска результата.">
       <created>1619983553932</created>
@@ -203,6 +204,9 @@
     <option name="localTasksCounter" value="3" />
     <servers />
   </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
   <component name="Vcs.Log.Tabs.Properties">
     <option name="TAB_STATES">
       <map>
@@ -218,5 +222,14 @@
     <MESSAGE value="1) не до конца удачный парсер для сайта - много приходилось копипастить вручную из-за того, например, что как отдельный абзац парсилась целая колонка сайта, не учитывались элементы дополнительной инфраструктуры (списки изданий, списки источников и тд).&#10;2)модуль для подбора оптимального варианта длины арабского градуса широты&#10;3) подбор вариантов платежей за хлеб разными группами владений по разным нормам и четырем сортам. В этом коммите дошел до создания четырех массивов, мерность которых определяется числом групп обеж, на которые разбивается общее число обеж владения. Остановился на механизме слияния их в один массив, в котором размерность вчетверо выше - чтобы просчитать все варианты сумм по всем сортам хлеба. Возможно, правильнее сначала сделать многомерный массив из векторов - платежей одной группы обеж одним сортом хлеба. И потом их все уже суммировать для поиска результата." />
     <MESSAGE value="1) Переделал hleb_match в более универсальную прогу. Разбил на отдельные функции, запускаемые по необходимости. 2) Тип данных float32 дает меньше ошибок при сравнении чисел - float16 считает равными числа,отличающиеся на 0,125. 3) Отдельная функция превращения набора одномерных массивов в набор массивов с общей размерностью, готовых к операциям по осям. Вместо создания множества одномерных массивов перемножением на цены сначала делается один шаблон путем умножения комбинаций обеж на варианты норм. Он одинаков для всех сортов хлеба. И уже потом, если надо, множим на цены отдельные измерения массива. 4) для удаления лишних комбинаций функция сравнивает значения внутри кортежа из норм, примененных к разным группам обеж. Если они равны, то по сути две группы образуют одну - и это рассмотрено в матрице соответствующей мерности. Так что из данной мерности они исключаются. 5) функция match_corob подбирает все комбинации коробей, дающие в сумме заданное число" />
     <option name="LAST_COMMIT_MESSAGE" value="1) Переделал hleb_match в более универсальную прогу. Разбил на отдельные функции, запускаемые по необходимости. 2) Тип данных float32 дает меньше ошибок при сравнении чисел - float16 считает равными числа,отличающиеся на 0,125. 3) Отдельная функция превращения набора одномерных массивов в набор массивов с общей размерностью, готовых к операциям по осям. Вместо создания множества одномерных массивов перемножением на цены сначала делается один шаблон путем умножения комбинаций обеж на варианты норм. Он одинаков для всех сортов хлеба. И уже потом, если надо, множим на цены отдельные измерения массива. 4) для удаления лишних комбинаций функция сравнивает значения внутри кортежа из норм, примененных к разным группам обеж. Если они равны, то по сути две группы образуют одну - и это рассмотрено в матрице соответствующей мерности. Так что из данной мерности они исключаются. 5) функция match_corob подбирает все комбинации коробей, дающие в сумме заданное число" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/experiment$task3.coverage" NAME="task3 Coverage Results" MODIFIED="1640337735345" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/lesson1" />
+    <SUITE FILE_PATH="coverage/experiment$task2__1_.coverage" NAME="task2 (1) Coverage Results" MODIFIED="1640340021193" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/lesson2" />
+    <SUITE FILE_PATH="coverage/experiment$task3__1_.coverage" NAME="task3 (1) Coverage Results" MODIFIED="1640188562161" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/lesson2" />
+    <SUITE FILE_PATH="coverage/experiment$server.coverage" NAME="server Coverage Results" MODIFIED="1640367513466" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/lesson3" />
+    <SUITE FILE_PATH="coverage/experiment$task1__1_.coverage" NAME="task1 (1) Coverage Results" MODIFIED="1640153981820" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/lesson2" />
+    <SUITE FILE_PATH="coverage/experiment$task1.coverage" NAME="task1 Coverage Results" MODIFIED="1640094825927" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/lesson1" />
+    <SUITE FILE_PATH="coverage/experiment$client.coverage" NAME="client Coverage Results" MODIFIED="1640424017411" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/lesson3" />
   </component>
 </project>
