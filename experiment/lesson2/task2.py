@@ -4,7 +4,6 @@ import json
 
 
 def write_order_to_json(item, quantity, price, buyer, date):
-
     with open('orders.json', 'r') as file:
         orders_data = json.load(file)
 
