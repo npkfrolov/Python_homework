@@ -51,27 +51,36 @@ def pres(): # сформировать presence-сообщение;
     return msg
 
 def send_mes(msg): # отправить сообщение серверу;
-    with open('mess.json', 'w') as mess_json:  # Это костыль. Конечно, должен быть способ напрямую отправлять, минуя
-        # файл
-        mess_json.write(json.dumps(msg))
-    with open('mess.json', 'rb') as mess_read:
-        s.send(mess_read.read())
+    mess_json = json.dumps(msg)
+    response = mess_json.encode('utf-8')
+    transport.send(response)
 
-def receiving(): # получить ответ сервера;
-    msg = s.recv(50000)
-    return msg
+def receiving(serv): # получить ответ сервера;
+    serv_data = serv.recv(50000)
+    if isinstance(serv_data, bytes):
+        json_response = serv_data.decode('utf-8')
+        response_dict = json.loads(json_response)
+        if isinstance(response_dict, dict):
+            return response_dict
+        raise ValueError
+    raise ValueError
 
 def parse(msg): # разобрать сообщение сервера
-    parsed = msg.decode('utf-8')
-    print(f'Сервер вернул код: {parsed}')
-
+    if msg['response'] == 200:
+        return '200: OK'
+    return f'400 : Error'
 
 if __name__ == '__main__':
     parser = createParser()
     namespace = parser.parse_args()
     params = (namespace.address, namespace.port)
 
-    s = socket(AF_INET, SOCK_STREAM)
-    s.connect(params)
+    transport = socket(AF_INET, SOCK_STREAM)
+    transport.connect(params)
     send_mes(pres())
-    parse(receiving())
+    try:
+        response = receiving(transport)
+        parse(response)
+        print(f'Ответ от сервера: {response}')
+    except (ValueError, json.JSONDecodeError):
+            print(f'Ошибка декодирования сообщения')

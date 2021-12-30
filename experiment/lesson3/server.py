@@ -55,13 +55,15 @@ actions = {
 
 
 def receiving(clnt):  # принимает сообщение клиента;
-    try:
-        client_data = clnt.recv(50000)
-        print(f'От клиента пришло сообщение: {client_data.decode()}')
-        resp_code = 200
-    except PermissionError:  # это пока заглушка - коды ошибок не анализировал
-        resp_code = 402
-    return resp_code
+    client_data = clnt.recv(50000)
+    print(f'От клиента пришло сообщение: {client_data.decode()}')
+    if isinstance(client_data, bytes):
+        json_response = client_data.decode('utf-8')
+        response_dict = json.loads(json_response)
+        if isinstance(response_dict, dict):
+            return response_dict
+        raise ValueError
+    raise ValueError
 
 
 def response(resp_code, action_type):  # формирует ответ клиенту;
@@ -76,11 +78,9 @@ def response(resp_code, action_type):  # формирует ответ клие�
 
 
 def send_mes(cli, mesg):  # отправляет ответ клиенту
-    with open('mess_to_cl.json', 'w') as mess_json:  # Это костыль. Конечно, должен быть способ напрямую отправлять,
-        # минуя файл
-        mess_json.write(json.dumps(mesg))
-    with open('mess_to_cl.json', 'rb') as mess_read:
-        cli.send(mess_read.read())
+    mess_json =  json.dumps(mesg)
+    response = mess_json.encode('utf-8')
+    cli.send(response)
 
 
 if __name__ == '__main__':
@@ -95,6 +95,10 @@ if __name__ == '__main__':
     while True:
         client, addr = s.accept()
         print(f'Принято соединение от клиента с адреса {addr}')
-        mess = response(receiving(client), 'msg')
-        send_mes(client, mess['response'])
+        try:
+            mess = receiving(client)
+            resp = response(200, 'msg')
+            send_mes(client, resp)
+        except (ValueError, json.JSONDecodeError):
+            print(f'Принято некорректное сообщение от клиента с адреса {addr}')
         client.close()
