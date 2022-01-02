@@ -1,13 +1,20 @@
 import json
+import logging
 from socket import AF_INET, SOCK_STREAM, socket
 import time
 import argparse
 
+from log.server_log_config import msngr_log
+import utils
 
-def createParser():
+logging.getLogger("mssngr.server")
+
+
+def create_parser():
     myparser = argparse.ArgumentParser()
     myparser.add_argument('-a', '--address', default='')
     myparser.add_argument('-p', '--port', default='7777', type=int)
+    msngr_log.debug(f'Парсинг команды запуска сервера выполнен')
 
     return myparser
 
@@ -29,10 +36,9 @@ code_table = {
     '500': 'ошибка сервера',
 }
 
-credentials = {"user":
-    {
-        "account_name": "C0deMaver1ck",
-        "password": "CorrectHorseBatterStaple"
+credentials = {"user": {
+    "account_name": "C0deMaver1ck",
+    "password": "CorrectHorseBatterStaple"
     }
 }
 
@@ -54,18 +60,6 @@ actions = {
 }
 
 
-def receiving(clnt):  # принимает сообщение клиента;
-    client_data = clnt.recv(50000)
-    print(f'От клиента пришло сообщение: {client_data.decode()}')
-    if isinstance(client_data, bytes):
-        json_response = client_data.decode('utf-8')
-        response_dict = json.loads(json_response)
-        if isinstance(response_dict, dict):
-            return response_dict
-        raise ValueError
-    raise ValueError
-
-
 def response(resp_code, action_type):  # формирует ответ клиенту;
     msg = {
         "action": action_type,
@@ -74,31 +68,36 @@ def response(resp_code, action_type):  # формирует ответ клие�
         "alert": code_table[str(resp_code)]
     }
     msg.update(actions[action_type])
+    msngr_log.debug('Ответ сервера клиенту сформирован')
     return msg
 
 
 def send_mes(cli, mesg):  # отправляет ответ клиенту
-    mess_json =  json.dumps(mesg)
-    response = mess_json.encode('utf-8')
-    cli.send(response)
+    mess_json = json.dumps(mesg)
+    rsp = mess_json.encode('utf-8')
+    cli.send(rsp)
+    msngr_log.info('Ответ клиенту отправлен')
 
 
 if __name__ == '__main__':
-    parser = createParser()
+    parser = create_parser()
     namespace = parser.parse_args()
     params = (namespace.address, namespace.port)
 
     s = socket(AF_INET, SOCK_STREAM)
-    s.bind(params)
-    s.listen(5)
+    try:
+        s.bind(params)
+        s.listen(5)
+    except Exception:
+        msngr_log.critical(f'Параметры сокета ({params}) не позволяют запустить сервер')
 
     while True:
         client, addr = s.accept()
-        print(f'Принято соединение от клиента с адреса {addr}')
-        try:
-            mess = receiving(client)
+        msngr_log.debug(f'Принято соединение от клиента с адреса {addr}')
+        try: 
+            mess = utils.receiving(client, msngr_log)
             resp = response(200, 'msg')
             send_mes(client, resp)
         except (ValueError, json.JSONDecodeError):
-            print(f'Принято некорректное сообщение от клиента с адреса {addr}')
+            msngr_log.error(f'Принято некорректное сообщение от клиента с адреса {addr}')
         client.close()

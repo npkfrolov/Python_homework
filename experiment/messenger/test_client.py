@@ -1,6 +1,6 @@
 import unittest
 
-from lesson3.client import pres, send_mes, receiving, parse
+from messenger.client import pres, parse
 
 
 class TestPresence(unittest.TestCase):
