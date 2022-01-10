@@ -1,20 +1,27 @@
+import logging
 from socket import AF_INET, SOCK_STREAM, socket
 import time
 import json
 import argparse
 
+from log.client_log_config import msngr_log
+import utils
 
-def createParser():
+logging.getLogger("mssngr.client")
+
+
+def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('address')  # В задании параметр указан как обязательный
     parser.add_argument('port', nargs='?', default='7777', type=int)
+    msngr_log.debug(f'Парсинг команды запуска клиента выполнен')
 
     return parser
 
+
 timestamp = time.time()
 
-credentials = {"user":
-        {
+credentials = {"user": {
         "account_name": "C0deMaver1ck",
         "password": "CorrectHorseBatterStaple"
         }
@@ -40,7 +47,8 @@ actions = {  # Справочник actions общий для сервера и 
     },
 }
 
-def pres(): # сформировать presence-сообщение;
+
+def pres():  # сформировать presence-сообщение;
     fields = actions['presence']
     msg = {
         "action": 'presence',
@@ -48,39 +56,39 @@ def pres(): # сформировать presence-сообщение;
     }
     msg.update(fields[0])
     msg.update(fields[1])
+    msngr_log.debug('Presence-сообщение для сервера сформировано')
     return msg
 
-def send_mes(msg): # отправить сообщение серверу;
+
+def send_mes(msg):  # отправить сообщение серверу;
     mess_json = json.dumps(msg)
     response = mess_json.encode('utf-8')
     transport.send(response)
+    msngr_log.info('Сообщение серверу отправлено')
 
-def receiving(serv): # получить ответ сервера;
-    serv_data = serv.recv(50000)
-    if isinstance(serv_data, bytes):
-        json_response = serv_data.decode('utf-8')
-        response_dict = json.loads(json_response)
-        if isinstance(response_dict, dict):
-            return response_dict
-        raise ValueError
-    raise ValueError
 
-def parse(msg): # разобрать сообщение сервера
-    if msg['response'] == 200:
+def parse(msg):  # разобрать сообщение сервера
+    if msg['response'] == "200":
+        msngr_log.debug('Сервер сообщил об успешном соединении')
         return '200: OK'
-    return f'400 : Error'
+    else:
+        msngr_log.critical(f'Сервер сообщил об ошибке {msg}')
+        return '400 : Error'
+
 
 if __name__ == '__main__':
-    parser = createParser()
-    namespace = parser.parse_args()
+    my_parser = create_parser()
+    namespace = my_parser.parse_args()
     params = (namespace.address, namespace.port)
 
     transport = socket(AF_INET, SOCK_STREAM)
-    transport.connect(params)
-    send_mes(pres())
     try:
-        response = receiving(transport)
-        parse(response)
-        print(f'Ответ от сервера: {response}')
+        transport.connect(params)
+        send_mes(pres())
+    except Exception:
+        msngr_log.critical(f'Параметры соединения ({params}) не принимает сервер')
+    try:
+        response = utils.receiving(transport, msngr_log)
+        print(parse(response))
     except (ValueError, json.JSONDecodeError):
-            print(f'Ошибка декодирования сообщения')
+        msngr_log.critical('Ошибка декодирования сообщения')

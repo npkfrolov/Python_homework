@@ -1,27 +1,27 @@
 import unittest
 import sys
 
-from lesson3.server import createParser, receiving, response, send_mes
+from messenger.server import create_parser, response
 
 
 class TestParser(unittest.TestCase):
 
     def test_default(self):
         sys.argv[1:] = []
-        parser = createParser()
+        parser = create_parser()
         namespace = parser.parse_args()
         self.assertEqual('', namespace.address)
         self.assertEqual(7777, namespace.port)
 
     def test_address(self):
         sys.argv[1:] = ['-a', 'localhost']
-        parser = createParser()
+        parser = create_parser()
         namespace = parser.parse_args()
         self.assertEqual(namespace.address, 'localhost')
 
     def test_port(self):
         sys.argv[1:] = ['-p', '7778']
-        parser = createParser()
+        parser = create_parser()
         namespace = parser.parse_args()
         self.assertEqual(namespace.port, 7778)
 
