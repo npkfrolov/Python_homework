@@ -5,11 +5,13 @@ import json
 import argparse
 
 from log.client_log_config import msngr_log
-import utils
+from utilss import utils
+from utilss.decorators import Log
+
 
 logging.getLogger("mssngr.client")
 
-
+@Log()
 def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('address')  # В задании параметр указан как обязательный
@@ -47,7 +49,7 @@ actions = {  # Справочник actions общий для сервера и 
     },
 }
 
-
+@Log()
 def pres():  # сформировать presence-сообщение;
     fields = actions['presence']
     msg = {
@@ -59,14 +61,14 @@ def pres():  # сформировать presence-сообщение;
     msngr_log.debug('Presence-сообщение для сервера сформировано')
     return msg
 
-
+@Log()
 def send_mes(msg):  # отправить сообщение серверу;
     mess_json = json.dumps(msg)
     response = mess_json.encode('utf-8')
     transport.send(response)
     msngr_log.info('Сообщение серверу отправлено')
 
-
+@Log()
 def parse(msg):  # разобрать сообщение сервера
     if msg['response'] == "200":
         msngr_log.debug('Сервер сообщил об успешном соединении')
