@@ -5,11 +5,12 @@ import time
 import argparse
 
 from log.server_log_config import msngr_log
-import utils
+from utilss import utils
+from utilss.decorators import log
 
 logging.getLogger("mssngr.server")
 
-
+@log
 def create_parser():
     myparser = argparse.ArgumentParser()
     myparser.add_argument('-a', '--address', default='')
@@ -59,7 +60,7 @@ actions = {
     },
 }
 
-
+@log
 def response(resp_code, action_type):  # формирует ответ клиенту;
     msg = {
         "action": action_type,
@@ -71,7 +72,7 @@ def response(resp_code, action_type):  # формирует ответ клие�
     msngr_log.debug('Ответ сервера клиенту сформирован')
     return msg
 
-
+@log
 def send_mes(cli, mesg):  # отправляет ответ клиенту
     mess_json = json.dumps(mesg)
     rsp = mess_json.encode('utf-8')
